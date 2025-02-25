@@ -70,6 +70,64 @@ const Success: React.FC = () => {
     }
   };
 
+  // Progress indicator component
+  const ProgressIndicator = ({ currentStep }: { currentStep: 'create' | 'verify' }) => {
+    return (
+      <div className="flex items-center justify-center my-6">
+        <div className="flex items-center w-full max-w-md">
+          {/* Step 1: Payment */}
+          <div className="flex flex-col items-center">
+            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <span className="text-xs text-blue-400 mt-1">Payment</span>
+          </div>
+          
+          {/* Connector */}
+          <div className="flex-1 h-1 bg-blue-500"></div>
+          
+          {/* Step 2: Account */}
+          <div className="flex flex-col items-center">
+            <div className={`w-8 h-8 ${currentStep === 'create' ? 'bg-blue-500 text-white' : 'bg-blue-500'} rounded-full flex items-center justify-center`}>
+              {currentStep === 'create' ? (
+                <span className="text-sm">2</span>
+              ) : (
+                <svg className="w-4 h-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              )}
+            </div>
+            <span className="text-xs text-blue-400 mt-1">Account</span>
+          </div>
+          
+          {/* Connector */}
+          <div className={`flex-1 h-1 ${currentStep === 'verify' ? 'bg-blue-500' : 'bg-gray-700'}`}></div>
+          
+          {/* Step 3: Verify */}
+          <div className="flex flex-col items-center">
+            <div className={`w-8 h-8 ${currentStep === 'verify' ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-400'} rounded-full flex items-center justify-center`}>
+              <span className="text-sm">3</span>
+            </div>
+            <span className={`text-xs ${currentStep === 'verify' ? 'text-blue-400' : 'text-gray-500'} mt-1`}>Verify</span>
+          </div>
+          
+          {/* Connector */}
+          <div className="flex-1 h-1 bg-gray-700"></div>
+          
+          {/* Step 4: Access */}
+          <div className="flex flex-col items-center">
+            <div className="w-8 h-8 bg-gray-700 text-gray-400 rounded-full flex items-center justify-center">
+              <span className="text-sm">4</span>
+            </div>
+            <span className="text-xs text-gray-500 mt-1">Access</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <div className="fixed inset-0 -z-10 overflow-hidden">
@@ -98,6 +156,10 @@ const Success: React.FC = () => {
             <div className="space-y-8">
               <div>
                 <h1 className="text-4xl font-bold tracking-tight">Welcome to Spilll!</h1>
+                
+                {/* Add progress indicator */}
+                <ProgressIndicator currentStep="create" />
+                
                 <p className="mt-4 text-lg text-gray-300">
                   Your payment was successful. Let's set up your account to get started.
                 </p>
@@ -167,6 +229,9 @@ const Success: React.FC = () => {
 
           {step === 'verify' && (
             <div className="space-y-6">
+              {/* Add progress indicator */}
+              <ProgressIndicator currentStep="verify" />
+              
               <div className="rounded-2xl bg-blue-500/10 p-8 ring-1 ring-blue-500/20">
                 <svg className="mx-auto h-12 w-12 text-blue-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
