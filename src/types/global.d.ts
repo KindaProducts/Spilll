@@ -1,0 +1,7 @@
+interface Window {
+  __env__: {
+    NEXT_PUBLIC_LEMONSQUEEZY_STORE_ID: string;
+    NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID: string;
+    NEXT_PUBLIC_LEMONSQUEEZY_YEARLY_VARIANT_ID: string;
+  }
+} 

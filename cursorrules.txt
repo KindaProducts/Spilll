@@ -1,0 +1,93 @@
+# Cursor Rules for AI-Powered Lightroom Preset Generator
+
+## Tech Stack
+- **Frontend**: React.js, Tailwind CSS
+- **Backend**: Node.js (Express), PostgreSQL
+- **AI/ML**: Python (TensorFlow/PyTorch for preset generation)
+- **Authentication**: Firebase or Auth0
+- **Payment Processing**: Stripe
+- **Email Marketing**: SendGrid or Mailchimp
+- **Hosting**: Vercel (frontend), Render or DigitalOcean (backend)
+- **Storage**: AWS S3 (for image and preset storage)
+- **Version Control**: Git (GitHub/GitLab)
+- **Dependency Management**: npm (Node.js), pip (Python)
+
+## Coding Rules
+1. **Avoid Duplicate Code**: Use reusable components and utility functions. Do not create duplicate pages or components unless absolutely necessary.
+2. **Modular Code**: Break down the application into modular components (e.g., `Header`, `Footer`, `Modal`, `PresetGenerator`).
+3. **Consistent Styling**: Use Tailwind CSS for all styling. Define reusable utility classes in a `styles` folder.
+4. **API Integration**: Use Axios for API calls. Ensure all API endpoints are documented and follow RESTful conventions.
+5. **Error Handling**: Implement proper error handling for all API calls and user interactions.
+6. **Authentication**: Use Firebase or Auth0 for user authentication. Store JWT tokens securely in local storage.
+7. **Payment Integration**: Use Stripe for the $29/month subscription. Handle webhooks for subscription events (e.g., cancellation, renewal).
+8. **Email Marketing**: Use SendGrid or Mailchimp for email drip campaigns. Store user emails in PostgreSQL.
+
+## Logic
+1. **One-Page Website**:
+   - Clean, modern design with a focus on AI features.
+   - CTA buttons for free preset download (email submission) and $29/month subscription.
+   - Modals for email submission and payment.
+   - Responsive design for mobile and desktop.
+
+2. **Desktop App**:
+   - Built using Electron.js for cross-platform compatibility.
+   - Allow users to upload images and generate presets.
+   - Download generated presets as XML files.
+   - Optional: Browser-based app for authenticated users (paid subscribers).
+
+3. **Email Drip Campaign**:
+   - Triggered when users submit their email for the free preset pack.
+   - Send welcome email with download link.
+   - Follow-up emails to encourage upgrading to the paid plan.
+
+## File Structure
+- **Frontend**:
+  - `src/components/` (reusable components)
+  - `src/pages/` (one-page website)
+  - `src/api/` (API calls)
+  - `src/styles/` (Tailwind CSS config and custom styles)
+- **Backend**:
+  - `routes/` (API endpoints)
+  - `models/` (database models)
+  - `controllers/` (business logic)
+  - `utils/` (utility functions)
+- **AI/ML**:
+  - `preset_generator/` (AI model and preset generation logic)
+- **Desktop App**:
+  - `main.js` (Electron main process)
+  - `renderer.js` (Electron renderer process)
+  - `components/` (reusable components)
+
+## Hosting and Deployment
+- **Frontend**: Deploy to Vercel.
+- **Backend**: Deploy to Render or DigitalOcean.
+- **Database**: Use PostgreSQL hosted on Render or DigitalOcean.
+- **Storage**: Use AWS S3 for image and preset storage.
+- **Desktop App**: Package using Electron Builder and distribute via GitHub Releases.
+
+## Version Control
+- Use Git for version control.
+- Create a `main` branch for production-ready code.
+- Use feature branches for development (e.g., `feature/email-submission`).
+- Follow semantic versioning for releases.
+
+## Dependencies
+- **Frontend**: React, Tailwind CSS, Axios, Firebase/Auth0, Stripe.js
+- **Backend**: Express, PostgreSQL, Stripe, SendGrid/Mailchimp, AWS SDK
+- **AI/ML**: TensorFlow/PyTorch, OpenCV, PIL
+- **Desktop App**: Electron.js, React, Node.js
+
+## Testing
+- Write unit tests for all critical components and API endpoints.
+- Use Jest for frontend and backend testing.
+- Test the AI model with a variety of images to ensure accurate preset generation.
+
+## Documentation
+- Document all API endpoints using Swagger or Postman.
+- Write a README file with setup instructions for the project.
+- Include comments in the code for complex logic.
+
+## Duplicate Code Prevention
+- Use reusable components and utility functions.
+- Avoid copying and pasting code. Refactor common logic into shared modules.
+- Use linters (ESLint) to enforce coding standards. 
