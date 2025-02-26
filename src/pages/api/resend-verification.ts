@@ -1,5 +1,4 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { hash } from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import Mailgun from 'mailgun.js';
 import FormData from 'form-data';
@@ -19,39 +18,39 @@ export default async function handler(
   res: NextApiResponse
 ) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
   try {
-    const { email, password } = req.body;
+    const { email } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Email is required' });
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
+    // Check if user exists
+    const user = await prisma.user.findUnique({
       where: { email },
     });
 
-    if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
 
-    // Hash password
-    const hashedPassword = await hash(password, 12);
+    if (user.isVerified) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Email is already verified. Please sign in.' 
+      });
+    }
 
-    // Generate verification token
+    // Generate new verification token
     const verificationToken = uuidv4();
 
-    // Create user with verification token
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        verificationToken,
-        isVerified: false,
-      },
+    // Update user with new verification token
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { verificationToken },
     });
 
     // Send verification email
@@ -102,7 +101,10 @@ export default async function handler(
 
     return res.status(200).json({ success: true });
   } catch (error: any) {
-    console.error('Account creation error:', error);
-    return res.status(500).json({ error: 'Failed to create account' });
+    console.error('Resend verification error:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: 'Failed to resend verification email' 
+    });
   }
 } 

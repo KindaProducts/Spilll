@@ -10,6 +10,7 @@ const Success: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [step, setStep] = useState<'loading' | 'create' | 'verify' | 'complete'>('loading');
+  const [isResendingEmail, setIsResendingEmail] = useState(false);
 
   useEffect(() => {
     const verifyPurchase = async () => {
@@ -70,62 +71,36 @@ const Success: React.FC = () => {
     }
   };
 
-  // Progress indicator component
-  const ProgressIndicator = ({ currentStep }: { currentStep: 'create' | 'verify' }) => {
-    return (
-      <div className="flex items-center justify-center my-6">
-        <div className="flex items-center w-full max-w-md">
-          {/* Step 1: Payment */}
-          <div className="flex flex-col items-center">
-            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-              <svg className="w-4 h-4 text-white" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <span className="text-xs text-blue-400 mt-1">Payment</span>
-          </div>
-          
-          {/* Connector */}
-          <div className="flex-1 h-1 bg-blue-500"></div>
-          
-          {/* Step 2: Account */}
-          <div className="flex flex-col items-center">
-            <div className={`w-8 h-8 ${currentStep === 'create' ? 'bg-blue-500 text-white' : 'bg-blue-500'} rounded-full flex items-center justify-center`}>
-              {currentStep === 'create' ? (
-                <span className="text-sm">2</span>
-              ) : (
-                <svg className="w-4 h-4 text-white" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-              )}
-            </div>
-            <span className="text-xs text-blue-400 mt-1">Account</span>
-          </div>
-          
-          {/* Connector */}
-          <div className={`flex-1 h-1 ${currentStep === 'verify' ? 'bg-blue-500' : 'bg-gray-700'}`}></div>
-          
-          {/* Step 3: Verify */}
-          <div className="flex flex-col items-center">
-            <div className={`w-8 h-8 ${currentStep === 'verify' ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-400'} rounded-full flex items-center justify-center`}>
-              <span className="text-sm">3</span>
-            </div>
-            <span className={`text-xs ${currentStep === 'verify' ? 'text-blue-400' : 'text-gray-500'} mt-1`}>Verify</span>
-          </div>
-          
-          {/* Connector */}
-          <div className="flex-1 h-1 bg-gray-700"></div>
-          
-          {/* Step 4: Access */}
-          <div className="flex flex-col items-center">
-            <div className="w-8 h-8 bg-gray-700 text-gray-400 rounded-full flex items-center justify-center">
-              <span className="text-sm">4</span>
-            </div>
-            <span className="text-xs text-gray-500 mt-1">Access</span>
-          </div>
-        </div>
-      </div>
-    );
+  const handleResendVerification = async () => {
+    setIsResendingEmail(true);
+    setError('');
+    
+    try {
+      const response = await fetch('/api/resend-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to resend verification email');
+      }
+      
+      // Show success message temporarily
+      setError('Verification email resent successfully!');
+      setTimeout(() => setError(''), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend verification email');
+    } finally {
+      setIsResendingEmail(false);
+    }
+  };
+
+  const handleGoToLogin = () => {
+    navigate('/login');
   };
 
   return (
@@ -135,7 +110,20 @@ const Success: React.FC = () => {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-violet-500/20 via-transparent to-transparent" />
       </div>
 
-      <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8">
+      {/* Logo/Branding at the top */}
+      <div className="pt-8 pb-4 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+            Spilll
+          </h1>
+        </motion.div>
+      </div>
+
+      <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -156,13 +144,15 @@ const Success: React.FC = () => {
             <div className="space-y-8">
               <div>
                 <h1 className="text-4xl font-bold tracking-tight">Welcome to Spilll!</h1>
-                
-                {/* Add progress indicator */}
-                <ProgressIndicator currentStep="create" />
-                
                 <p className="mt-4 text-lg text-gray-300">
                   Your payment was successful. Let's set up your account to get started.
                 </p>
+                <div className="mt-2 flex justify-center">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
+                    <div className="text-sm text-gray-400">Step 1: Create your account</div>
+                  </div>
+                </div>
               </div>
 
               <form onSubmit={handleCreateAccount} className="space-y-6">
@@ -177,6 +167,9 @@ const Success: React.FC = () => {
                     disabled
                     className="mt-2 block w-full rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-3 text-white placeholder-gray-400"
                   />
+                  <p className="mt-1 text-xs text-gray-400 text-left">
+                    This email is from your purchase and cannot be changed
+                  </p>
                 </div>
 
                 <div>
@@ -192,6 +185,9 @@ const Success: React.FC = () => {
                     required
                     minLength={8}
                   />
+                  <p className="mt-1 text-xs text-gray-400 text-left">
+                    Must be at least 8 characters
+                  </p>
                 </div>
 
                 <div>
@@ -210,9 +206,13 @@ const Success: React.FC = () => {
                 </div>
 
                 {error && (
-                  <div className="rounded-lg bg-red-500/10 p-4 text-sm text-red-400">
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="rounded-lg bg-red-500/10 p-4 text-sm text-red-400 border border-red-500/20"
+                  >
                     {error}
-                  </div>
+                  </motion.div>
                 )}
 
                 <motion.button
@@ -229,8 +229,14 @@ const Success: React.FC = () => {
 
           {step === 'verify' && (
             <div className="space-y-6">
-              {/* Add progress indicator */}
-              <ProgressIndicator currentStep="verify" />
+              <div>
+                <div className="mt-2 flex justify-center">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
+                    <div className="text-sm text-gray-400">Step 2: Verify your email</div>
+                  </div>
+                </div>
+              </div>
               
               <div className="rounded-2xl bg-blue-500/10 p-8 ring-1 ring-blue-500/20">
                 <svg className="mx-auto h-12 w-12 text-blue-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
@@ -243,15 +249,42 @@ const Success: React.FC = () => {
                 </p>
               </div>
 
-              <p className="text-sm text-gray-400">
-                Didn't receive the email? Check your spam folder or{' '}
-                <button
-                  onClick={() => setStep('create')}
-                  className="text-blue-400 hover:text-blue-300"
+              {error && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`rounded-lg p-4 text-sm border ${
+                    error.includes('success') 
+                      ? 'bg-green-500/10 text-green-400 border-green-500/20' 
+                      : 'bg-red-500/10 text-red-400 border-red-500/20'
+                  }`}
                 >
-                  try again
-                </button>
-              </p>
+                  {error}
+                </motion.div>
+              )}
+
+              <div className="flex flex-col space-y-4">
+                <p className="text-sm text-gray-400">
+                  Didn't receive the email? Check your spam folder or
+                </p>
+                <motion.button
+                  onClick={handleResendVerification}
+                  disabled={isResendingEmail}
+                  className="rounded-lg bg-gray-800 border border-gray-700 px-6 py-3 text-sm font-medium text-white hover:bg-gray-700"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {isResendingEmail ? 'Sending...' : 'Resend verification email'}
+                </motion.button>
+                <motion.button
+                  onClick={handleGoToLogin}
+                  className="rounded-lg bg-transparent px-6 py-3 text-sm font-medium text-blue-400 hover:text-blue-300"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Already verified? Sign in
+                </motion.button>
+              </div>
             </div>
           )}
         </motion.div>
