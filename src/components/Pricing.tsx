@@ -43,9 +43,9 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
       // Use the correct variant ID based on the selected plan
       const variantId = isYearly ? yearlyVariantId : monthlyVariantId;
       
-      // Use the official LemonSqueezy checkout URL format with success_url parameter
-      const successUrl = encodeURIComponent(`${window.location.origin}/success`);
-      const checkoutUrl = `https://checkout.lemonsqueezy.com/buy/${variantId}?success_url=${successUrl}`;
+      // Use the exact URL format provided in the documentation
+      // Format: https://checkout.lemonsqueezy.com/buy/[variant_id]?success_url=https://www.spillling.com/success
+      const checkoutUrl = `https://checkout.lemonsqueezy.com/buy/${variantId}?success_url=https://www.spillling.com/success`;
       
       console.log('Redirecting to checkout:', checkoutUrl);
       window.location.href = checkoutUrl;
