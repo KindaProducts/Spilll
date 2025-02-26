@@ -10,38 +10,51 @@ const Success: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [step, setStep] = useState<'loading' | 'create' | 'verify' | 'complete'>('loading');
-  const [isResendingEmail, setIsResendingEmail] = useState(false);
+  const [subscriptionData, setSubscriptionData] = useState<any>(null);
 
   useEffect(() => {
     const verifyPurchase = async () => {
       try {
-        // First, try to get the email from the URL parameters directly
-        // This is for our custom checkout URLs
-        let userEmail = searchParams.get('email');
+        // Get the order data from LemonSqueezy's redirect
+        const orderData = searchParams.get('order_data');
+        if (!orderData) {
+          throw new Error('No order data found');
+        }
+
+        // Parse the base64 encoded order data
+        const decodedData = JSON.parse(atob(orderData));
+        console.log('Order data:', decodedData);
         
-        // If no email in URL, try to get the order data from LemonSqueezy's redirect
-        // This is for backward compatibility
-        if (!userEmail) {
-          const orderData = searchParams.get('order_data');
-          if (orderData) {
-            // Parse the base64 encoded order data
-            const decodedData = JSON.parse(atob(orderData));
-            console.log('Order data:', decodedData);
-            userEmail = decodedData.customer.email;
-          }
+        // Set the email from the order
+        setEmail(decodedData.customer.email);
+        
+        // Extract subscription data
+        const subscription = decodedData.subscription;
+        if (subscription) {
+          setSubscriptionData({
+            subscriptionId: subscription.id,
+            customerId: decodedData.customer.id,
+            variantId: subscription.variant_id,
+            subscriptionStatus: subscription.status,
+            currentPeriodEnd: subscription.renews_at,
+            planType: subscription.variant_id === window.__env__?.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID 
+              ? 'monthly' 
+              : 'yearly'
+          });
+          console.log('Subscription data extracted:', {
+            subscriptionId: subscription.id,
+            customerId: decodedData.customer.id,
+            variantId: subscription.variant_id,
+            subscriptionStatus: subscription.status,
+            currentPeriodEnd: subscription.renews_at,
+            planType: subscription.variant_id === window.__env__?.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID 
+              ? 'monthly' 
+              : 'yearly'
+          });
+        } else {
+          console.log('No subscription data found in order');
         }
         
-        if (!userEmail) {
-          // If still no email, check if we have a test parameter
-          userEmail = searchParams.get('test_email');
-        }
-        
-        if (!userEmail) {
-          throw new Error('No email information found');
-        }
-        
-        // Set the email
-        setEmail(userEmail);
         setStep('create');
       } catch (err: any) {
         setError(err.message || 'Something went wrong');
@@ -67,12 +80,21 @@ const Success: React.FC = () => {
     }
 
     try {
+      // Prepare request data with subscription info if available
+      const requestData = {
+        email,
+        password,
+        ...(subscriptionData || {})
+      };
+      
+      console.log('Sending account creation request with data:', requestData);
+      
       const response = await fetch('/api/create-account', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(requestData),
       });
 
       const data = await response.json();
@@ -86,38 +108,6 @@ const Success: React.FC = () => {
     }
   };
 
-  const handleResendVerification = async () => {
-    setIsResendingEmail(true);
-    setError('');
-    
-    try {
-      const response = await fetch('/api/resend-verification', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json();
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to resend verification email');
-      }
-      
-      // Show success message temporarily
-      setError('Verification email resent successfully!');
-      setTimeout(() => setError(''), 3000);
-    } catch (err: any) {
-      setError(err.message || 'Failed to resend verification email');
-    } finally {
-      setIsResendingEmail(false);
-    }
-  };
-
-  const handleGoToLogin = () => {
-    navigate('/login');
-  };
-
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <div className="fixed inset-0 -z-10 overflow-hidden">
@@ -125,20 +115,7 @@ const Success: React.FC = () => {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-violet-500/20 via-transparent to-transparent" />
       </div>
 
-      {/* Logo/Branding at the top */}
-      <div className="pt-8 pb-4 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            Spilll
-          </h1>
-        </motion.div>
-      </div>
-
-      <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16 lg:px-8">
+      <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -162,12 +139,11 @@ const Success: React.FC = () => {
                 <p className="mt-4 text-lg text-gray-300">
                   Your payment was successful. Let's set up your account to get started.
                 </p>
-                <div className="mt-2 flex justify-center">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
-                    <div className="text-sm text-gray-400">Step 1: Create your account</div>
+                {subscriptionData && (
+                  <div className="mt-2 rounded-lg bg-blue-500/10 p-3 text-sm text-blue-300">
+                    <p>Your {subscriptionData.planType} subscription is active!</p>
                   </div>
-                </div>
+                )}
               </div>
 
               <form onSubmit={handleCreateAccount} className="space-y-6">
@@ -182,9 +158,6 @@ const Success: React.FC = () => {
                     disabled
                     className="mt-2 block w-full rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-3 text-white placeholder-gray-400"
                   />
-                  <p className="mt-1 text-xs text-gray-400 text-left">
-                    This email is from your purchase and cannot be changed
-                  </p>
                 </div>
 
                 <div>
@@ -200,9 +173,6 @@ const Success: React.FC = () => {
                     required
                     minLength={8}
                   />
-                  <p className="mt-1 text-xs text-gray-400 text-left">
-                    Must be at least 8 characters
-                  </p>
                 </div>
 
                 <div>
@@ -221,13 +191,9 @@ const Success: React.FC = () => {
                 </div>
 
                 {error && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="rounded-lg bg-red-500/10 p-4 text-sm text-red-400 border border-red-500/20"
-                  >
+                  <div className="rounded-lg bg-red-500/10 p-4 text-sm text-red-400">
                     {error}
-                  </motion.div>
+                  </div>
                 )}
 
                 <motion.button
@@ -244,15 +210,6 @@ const Success: React.FC = () => {
 
           {step === 'verify' && (
             <div className="space-y-6">
-              <div>
-                <div className="mt-2 flex justify-center">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
-                    <div className="text-sm text-gray-400">Step 2: Verify your email</div>
-                  </div>
-                </div>
-              </div>
-              
               <div className="rounded-2xl bg-blue-500/10 p-8 ring-1 ring-blue-500/20">
                 <svg className="mx-auto h-12 w-12 text-blue-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -264,30 +221,15 @@ const Success: React.FC = () => {
                 </p>
               </div>
 
-              <div className="mt-8 space-y-4">
-                <p className="text-gray-400">
-                  Didn't receive the email? Check your spam folder or click below to resend.
-                </p>
-                <motion.button
-                  onClick={handleResendVerification}
-                  disabled={isResendingEmail}
-                  className={`w-full rounded-lg bg-gray-700 px-6 py-3 text-sm font-medium text-white hover:bg-gray-600 ${
-                    isResendingEmail ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                  whileHover={isResendingEmail ? {} : { scale: 1.02 }}
-                  whileTap={isResendingEmail ? {} : { scale: 0.98 }}
+              <p className="text-sm text-gray-400">
+                Didn't receive the email? Check your spam folder or{' '}
+                <button
+                  onClick={() => setStep('create')}
+                  className="text-blue-400 hover:text-blue-300"
                 >
-                  {isResendingEmail ? 'Sending...' : 'Resend Verification Email'}
-                </motion.button>
-                <motion.button
-                  onClick={handleGoToLogin}
-                  className="w-full rounded-lg bg-transparent px-6 py-3 text-sm font-medium text-gray-300 hover:text-white"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Go to Login
-                </motion.button>
-              </div>
+                  try again
+                </button>
+              </p>
             </div>
           )}
         </motion.div>

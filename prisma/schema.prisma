@@ -16,4 +16,13 @@ model User {
   isVerified        Boolean   @default(false)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+  
+  // Subscription fields
+  subscriptionId    String?
+  customerId        String?
+  variantId         String?
+  isSubscribed      Boolean   @default(false)
+  subscriptionStatus String?   @default("inactive")
+  currentPeriodEnd  DateTime?
+  planType          String?   // "monthly" or "yearly"
 } 
