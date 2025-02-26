@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { redirectToCheckout } from '../services/checkout';
 
 interface PricingProps {
   onFreePresetsClick: () => void;
@@ -27,22 +28,8 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
     setIsLoading(true);
 
     try {
-      // Get the checkout URLs directly from window.__env__
-      const monthlyCheckoutUrl = window.__env__.NEXT_PUBLIC_MONTHLY_CHECKOUT_URL;
-      const yearlyCheckoutUrl = window.__env__.NEXT_PUBLIC_YEARLY_CHECKOUT_URL;
-      
-      console.log('Environment variables:', {
-        monthlyCheckoutUrl,
-        yearlyCheckoutUrl
-      });
-      
-      // Use the appropriate URL based on the selected plan
-      const checkoutUrl = isYearly ? yearlyCheckoutUrl : monthlyCheckoutUrl;
-      
-      console.log('Redirecting to checkout:', checkoutUrl);
-      
-      // Force a direct navigation to the URL
-      window.location.href = checkoutUrl;
+      // Use our custom checkout service to handle the redirection
+      redirectToCheckout(isYearly);
     } catch (err) {
       console.error('Checkout error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to start checkout process';
