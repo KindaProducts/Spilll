@@ -26,7 +26,35 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
   const monthlySavings = Math.floor(monthlyPrice * 12 - yearlyPrice);
 
   const handleSubscribe = async () => {
-    setShowEmailForm(true);
+    setIsLoading(true);
+    try {
+      // Get checkout URLs from window.__env__ or fallback to process.env
+      const env = typeof window !== 'undefined' ? (window as any).__env__ || {} : {};
+      
+      // Redirect to LemonSqueezy checkout
+      let checkoutUrl;
+      if (isYearly) {
+        checkoutUrl = env.NEXT_PUBLIC_LEMONSQUEEZY_YEARLY_URL;
+      } else {
+        checkoutUrl = env.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_URL;
+      }
+      
+      if (!checkoutUrl) {
+        throw new Error('Checkout URL not configured');
+      }
+      
+      // Add success URL parameter
+      const successUrl = `${window.location.origin}/success`;
+      const finalUrl = `${checkoutUrl}?success_url=${encodeURIComponent(successUrl)}`;
+      
+      console.log(`Redirecting to checkout: ${finalUrl}`);
+      window.location.href = finalUrl;
+    } catch (err) {
+      console.error('Checkout error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to initiate checkout';
+      setError(errorMessage);
+      setIsLoading(false);
+    }
   };
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
