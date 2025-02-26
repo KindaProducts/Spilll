@@ -27,17 +27,32 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
     setIsLoading(true);
 
     try {
-      // Direct URLs for checkout - no dependencies on any libraries or services
-      // These are the exact URLs provided by the user
-      const monthlyCheckoutUrl = 'https://spillling.com/buy/9588e2f5-6ffd-4408-9964-b46d84d4d9ac';
-      const yearlyCheckoutUrl = 'https://spillling.com/buy/c10e8f45-cb50-4472-aaf1-9ec55074c62f';
+      // Debug: Log environment variables
+      console.log('Environment:', window.__env__);
       
-      // Use the appropriate URL based on the selected plan
-      const checkoutUrl = isYearly ? yearlyCheckoutUrl : monthlyCheckoutUrl;
+      // Get variant IDs from environment variables
+      const monthlyVariantId = window.__env__?.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID;
+      const yearlyVariantId = window.__env__?.NEXT_PUBLIC_LEMONSQUEEZY_YEARLY_VARIANT_ID;
+      const storeId = window.__env__?.NEXT_PUBLIC_LEMONSQUEEZY_STORE_ID;
+
+      console.log('Config:', { 
+        monthlyVariantId, 
+        yearlyVariantId, 
+        storeId,
+        isYearly 
+      });
+
+      if (!monthlyVariantId || !yearlyVariantId) {
+        throw new Error('Variant IDs not found. Please check your configuration.');
+      }
+
+      // Use the correct variant ID based on selection
+      const variantId = isYearly ? yearlyVariantId : monthlyVariantId;
+      
+      // Construct the checkout URL using the standard LemonSqueezy format
+      const checkoutUrl = `https://lemonsqueezy.com/checkout/${variantId}`;
       
       console.log('Redirecting to checkout:', checkoutUrl);
-      
-      // Direct navigation using window.location.href
       window.location.href = checkoutUrl;
     } catch (err) {
       console.error('Checkout error:', err);
