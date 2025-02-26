@@ -27,18 +27,22 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
     setIsLoading(true);
 
     try {
-      // IMPORTANT: We're bypassing all environment variables and directly using the correct URLs
-      // These are the only correct URLs that should be used
-      const monthlyUUID = '9588e2f5-6ffd-4408-9964-b46d84d4d9ac';
-      const yearlyUUID = 'c10e8f45-cb50-4472-aaf1-9ec55074c62f';
+      // Get the checkout URLs directly from window.__env__
+      const monthlyCheckoutUrl = window.__env__.NEXT_PUBLIC_MONTHLY_CHECKOUT_URL;
+      const yearlyCheckoutUrl = window.__env__.NEXT_PUBLIC_YEARLY_CHECKOUT_URL;
       
-      // Construct the URL directly without any reference to environment variables
-      const checkoutUrl = `https://spillling.com/buy/${isYearly ? yearlyUUID : monthlyUUID}`;
+      console.log('Environment variables:', {
+        monthlyCheckoutUrl,
+        yearlyCheckoutUrl
+      });
+      
+      // Use the appropriate URL based on the selected plan
+      const checkoutUrl = isYearly ? yearlyCheckoutUrl : monthlyCheckoutUrl;
       
       console.log('Redirecting to checkout:', checkoutUrl);
       
-      // Use window.open instead of window.location.href to avoid potential interference
-      window.open(checkoutUrl, '_self');
+      // Force a direct navigation to the URL
+      window.location.href = checkoutUrl;
     } catch (err) {
       console.error('Checkout error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to start checkout process';
