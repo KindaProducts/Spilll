@@ -46,10 +46,10 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
         throw new Error('Variant IDs not found. Please check your configuration.');
       }
 
-      // Use the exact LemonSqueezy checkout URLs for the live site
-      const checkoutUrl = isYearly 
-        ? 'https://lemonsqueezy.com/checkout/705574'  // Yearly variant
-        : 'https://lemonsqueezy.com/checkout/705572'; // Monthly variant
+      // Construct the checkout URL
+      const monthlyUUID = '9588e2f5-6ffd-4408-9964-b46d84d4d9ac';
+      const yearlyUUID = 'c10e8f45-cb50-4472-aaf1-9ec55074c62f';
+      const checkoutUrl = `https://spillling.com/buy/${isYearly ? yearlyUUID : monthlyUUID}`;
       
       console.log('Redirecting to checkout:', checkoutUrl);
       window.location.href = checkoutUrl;
