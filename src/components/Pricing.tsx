@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface PricingProps {
   onFreePresetsClick: () => void;
@@ -9,7 +9,6 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
   const [isYearly, setIsYearly] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isRedirecting, setIsRedirecting] = useState(false);
 
   // Clear error after 5 seconds
   useEffect(() => {
@@ -26,7 +25,6 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
   const handleSubscribe = async () => {
     setError(null);
     setIsLoading(true);
-    setIsRedirecting(true);
 
     try {
       // Debug: Log environment variables
@@ -48,22 +46,18 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
         throw new Error('Variant IDs not found. Please check your configuration.');
       }
 
-      // Construct the checkout URL
-      const monthlyUUID = '9588e2f5-6ffd-4408-9964-b46d84d4d9ac';
-      const yearlyUUID = 'c10e8f45-cb50-4472-aaf1-9ec55074c62f';
-      const checkoutUrl = `https://spillling.com/buy/${isYearly ? yearlyUUID : monthlyUUID}`;
+      // Use the exact LemonSqueezy checkout URLs for the live site
+      const checkoutUrl = isYearly 
+        ? 'https://lemonsqueezy.com/checkout/705574'  // Yearly variant
+        : 'https://lemonsqueezy.com/checkout/705572'; // Monthly variant
       
       console.log('Redirecting to checkout:', checkoutUrl);
-      
-      // Show transition screen for 1.5 seconds before redirecting
-      setTimeout(() => {
-        window.location.href = checkoutUrl;
-      }, 1500);
+      window.location.href = checkoutUrl;
     } catch (err) {
       console.error('Checkout error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to start checkout process';
       setError(errorMessage);
-      setIsRedirecting(false);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -169,34 +163,10 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
                 </motion.li>
               ))}
             </ul>
-
-            {/* Add progress indicator */}
-            <div className="mt-8 mb-4">
-              <h4 className="text-sm font-medium text-gray-300 mb-3">What happens next:</h4>
-              <ol className="space-y-3">
-                <li className="flex items-center text-sm text-gray-300">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 text-white text-xs mr-3 flex-shrink-0">1</span>
-                  <span>Choose your plan</span>
-                </li>
-                <li className="flex items-center text-sm text-gray-300">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-700 text-white text-xs mr-3 flex-shrink-0">2</span>
-                  <span>Complete secure payment</span>
-                </li>
-                <li className="flex items-center text-sm text-gray-300">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-700 text-white text-xs mr-3 flex-shrink-0">3</span>
-                  <span>Create your account</span>
-                </li>
-                <li className="flex items-center text-sm text-gray-300">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-700 text-white text-xs mr-3 flex-shrink-0">4</span>
-                  <span>Access your presets</span>
-                </li>
-              </ol>
-            </div>
-
             <motion.button
               onClick={handleSubscribe}
               disabled={isLoading}
-              className={`mt-6 block w-full rounded-lg bg-blue-600 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 ${
+              className={`mt-8 block w-full rounded-lg bg-blue-600 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 ${
                 isLoading ? 'opacity-75 cursor-not-allowed' : ''
               }`}
               whileHover={isLoading ? {} : { scale: 1.02 }}
@@ -244,36 +214,6 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
           {error}
         </motion.div>
       )}
-
-      {/* Add transition screen */}
-      <AnimatePresence>
-        {isRedirecting && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-gray-900/90 flex items-center justify-center z-50"
-          >
-            <div className="text-center p-8 max-w-md">
-              <div className="mb-6">
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"
-                />
-              </div>
-              <h2 className="text-2xl font-bold text-white mb-3">Redirecting to Secure Checkout</h2>
-              <p className="text-gray-300">You're being redirected to our secure payment provider.</p>
-              <div className="mt-8 opacity-50">
-                <svg className="h-8 mx-auto" viewBox="0 0 100 24" fill="currentColor">
-                  <path d="M10 0C4.5 0 0 4.5 0 10s4.5 10 10 10 10-4.5 10-10S15.5 0 10 0zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm30-8c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10zm-10 8c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm30-8c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10zm-10 8c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm30-8c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10zm-10 8c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8z" fill="currentColor" className="text-blue-500" />
-                </svg>
-                <p className="text-sm text-gray-400 mt-2">Spilll</p>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
