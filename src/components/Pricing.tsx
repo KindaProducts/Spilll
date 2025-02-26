@@ -30,24 +30,22 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
       // Debug: Log environment variables
       console.log('Environment:', window.__env__);
       
-      // Get variant IDs from environment variables for tracking purposes
+      // Get variant IDs from environment variables
       const monthlyVariantId = window.__env__?.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID;
       const yearlyVariantId = window.__env__?.NEXT_PUBLIC_LEMONSQUEEZY_YEARLY_VARIANT_ID;
-      const storeId = window.__env__?.NEXT_PUBLIC_LEMONSQUEEZY_STORE_ID;
-
+      
       console.log('Config:', { 
         monthlyVariantId, 
         yearlyVariantId, 
-        storeId,
         isYearly 
       });
 
-      // Direct URLs for checkout - these are the exact URLs provided by LemonSqueezy
-      const monthlyCheckoutUrl = 'https://spillling.com/buy/9588e2f5-6ffd-4408-9964-b46d84d4d9ac';
-      const yearlyCheckoutUrl = 'https://spillling.com/buy/c10e8f45-cb50-4472-aaf1-9ec55074c62f';
+      // Use the correct variant ID based on the selected plan
+      const variantId = isYearly ? yearlyVariantId : monthlyVariantId;
       
-      // Use the appropriate URL based on the selected plan
-      const checkoutUrl = isYearly ? yearlyCheckoutUrl : monthlyCheckoutUrl;
+      // Use the official LemonSqueezy checkout URL format with success_url parameter
+      const successUrl = encodeURIComponent(`${window.location.origin}/success`);
+      const checkoutUrl = `https://checkout.lemonsqueezy.com/buy/${variantId}?success_url=${successUrl}`;
       
       console.log('Redirecting to checkout:', checkoutUrl);
       window.location.href = checkoutUrl;
