@@ -46,12 +46,17 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
         throw new Error('Variant IDs not found. Please check your configuration.');
       }
 
-      // Construct the checkout URL
+      // Construct the checkout URL - ALWAYS use the UUID format, not the direct LemonSqueezy URL
       const monthlyUUID = '9588e2f5-6ffd-4408-9964-b46d84d4d9ac';
       const yearlyUUID = 'c10e8f45-cb50-4472-aaf1-9ec55074c62f';
+      
+      // Force the use of the UUID format
       const checkoutUrl = `https://spillling.com/buy/${isYearly ? yearlyUUID : monthlyUUID}`;
       
+      // Log the URL we're redirecting to for debugging
       console.log('Redirecting to checkout:', checkoutUrl);
+      
+      // Redirect to the checkout URL
       window.location.href = checkoutUrl;
     } catch (err) {
       console.error('Checkout error:', err);
