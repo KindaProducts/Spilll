@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { redirectToCheckout } from '../services/checkout';
 
 interface PricingProps {
   onFreePresetsClick: () => void;
@@ -28,8 +27,18 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
     setIsLoading(true);
 
     try {
-      // Use our custom checkout service to handle the redirection
-      redirectToCheckout(isYearly);
+      // SIMPLIFIED APPROACH: Directly use the hardcoded URLs
+      // These are the exact URLs we want to use, no library or service needed
+      const monthlyCheckoutUrl = 'https://spillling.com/buy/9588e2f5-6ffd-4408-9964-b46d84d4d9ac';
+      const yearlyCheckoutUrl = 'https://spillling.com/buy/c10e8f45-cb50-4472-aaf1-9ec55074c62f';
+      
+      // Use the appropriate URL based on the selected plan
+      const checkoutUrl = isYearly ? yearlyCheckoutUrl : monthlyCheckoutUrl;
+      
+      console.log('Redirecting to checkout:', checkoutUrl);
+      
+      // Direct navigation - no library, no service, just plain JavaScript
+      window.location.href = checkoutUrl;
     } catch (err) {
       console.error('Checkout error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to start checkout process';
