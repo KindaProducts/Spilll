@@ -9,6 +9,9 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
   const [isYearly, setIsYearly] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [formSubmitted, setFormSubmitted] = useState(false);
 
   // Clear error after 5 seconds
   useEffect(() => {
@@ -23,42 +26,33 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
   const monthlySavings = Math.floor(monthlyPrice * 12 - yearlyPrice);
 
   const handleSubscribe = async () => {
+    setShowEmailForm(true);
+  };
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError(null);
     setIsLoading(true);
 
     try {
-      // Debug: Log environment variables
-      console.log('Environment:', window.__env__);
-      
-      // Get variant IDs from environment variables
-      const monthlyVariantId = window.__env__?.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID;
-      const yearlyVariantId = window.__env__?.NEXT_PUBLIC_LEMONSQUEEZY_YEARLY_VARIANT_ID;
-      
-      console.log('Config:', { 
-        monthlyVariantId, 
-        yearlyVariantId, 
-        isYearly 
-      });
-
-      // Use the correct variant ID based on the selected plan
-      const variantId = isYearly ? yearlyVariantId : monthlyVariantId;
-      
-      if (!variantId) {
-        throw new Error('Variant ID is missing. Please check your environment configuration.');
+      // Validate email
+      if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+        throw new Error('Please enter a valid email address');
       }
+
+      // Here you would typically send the email to your backend
+      // For now, we'll just simulate a successful submission
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Use the exact URL format from LemonSqueezy
-      // For custom domains: https://[store-slug].lemonsqueezy.com/checkout/buy/[variant_id]
-      // For lemonsqueezy.com: https://checkout.lemonsqueezy.com/buy/[variant_id]
+      console.log('Interest registered for:', { 
+        email,
+        plan: isYearly ? 'yearly' : 'monthly'
+      });
       
-      // Based on the URL you're being redirected to, we'll use this format:
-      const checkoutUrl = `https://checkout.lemonsqueezy.com/buy/${variantId}?success_url=${encodeURIComponent('https://www.spillling.com/success')}`;
-      
-      console.log('Redirecting to checkout:', checkoutUrl);
-      window.location.href = checkoutUrl;
+      setFormSubmitted(true);
     } catch (err) {
-      console.error('Checkout error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to start checkout process';
+      console.error('Submission error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to register interest';
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -166,17 +160,68 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
                 </motion.li>
               ))}
             </ul>
-            <motion.button
-              onClick={handleSubscribe}
-              disabled={isLoading}
-              className={`mt-8 block w-full rounded-lg bg-blue-600 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 ${
-                isLoading ? 'opacity-75 cursor-not-allowed' : ''
-              }`}
-              whileHover={isLoading ? {} : { scale: 1.02 }}
-              whileTap={isLoading ? {} : { scale: 0.98 }}
-            >
-              {isLoading ? 'Processing...' : `Get Started with ${isYearly ? 'Yearly' : 'Monthly'} Plan`}
-            </motion.button>
+            
+            {!showEmailForm && !formSubmitted && (
+              <motion.button
+                onClick={handleSubscribe}
+                disabled={isLoading}
+                className={`mt-8 block w-full rounded-lg bg-blue-600 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 ${
+                  isLoading ? 'opacity-75 cursor-not-allowed' : ''
+                }`}
+                whileHover={isLoading ? {} : { scale: 1.02 }}
+                whileTap={isLoading ? {} : { scale: 0.98 }}
+              >
+                {isLoading ? 'Processing...' : `Get Started with ${isYearly ? 'Yearly' : 'Monthly'} Plan`}
+              </motion.button>
+            )}
+            
+            {showEmailForm && !formSubmitted && (
+              <motion.form 
+                onSubmit={handleEmailSubmit}
+                className="mt-6 space-y-4"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                transition={{ duration: 0.3 }}
+              >
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
+                    Email address
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    className="w-full rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-3 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <motion.button
+                  type="submit"
+                  disabled={isLoading}
+                  className={`block w-full rounded-lg bg-blue-600 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 ${
+                    isLoading ? 'opacity-75 cursor-not-allowed' : ''
+                  }`}
+                  whileHover={isLoading ? {} : { scale: 1.02 }}
+                  whileTap={isLoading ? {} : { scale: 0.98 }}
+                >
+                  {isLoading ? 'Processing...' : 'Register Interest'}
+                </motion.button>
+              </motion.form>
+            )}
+            
+            {formSubmitted && (
+              <motion.div
+                className="mt-6 rounded-lg bg-green-500/10 p-4 text-green-300"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <p className="font-medium">Thank you for your interest!</p>
+                <p className="mt-1 text-sm">We'll contact you soon with more information about our Pro plan.</p>
+              </motion.div>
+            )}
           </motion.div>
 
           {/* Free tier card */}

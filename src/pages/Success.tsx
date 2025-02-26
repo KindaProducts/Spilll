@@ -1,69 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const Success: React.FC = () => {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const [step, setStep] = useState<'loading' | 'create' | 'verify' | 'complete'>('loading');
-  const [subscriptionData, setSubscriptionData] = useState<any>(null);
-
-  useEffect(() => {
-    const verifyPurchase = async () => {
-      try {
-        // Get the order data from LemonSqueezy's redirect
-        const orderData = searchParams.get('order_data');
-        if (!orderData) {
-          throw new Error('No order data found');
-        }
-
-        // Parse the base64 encoded order data
-        const decodedData = JSON.parse(atob(orderData));
-        console.log('Order data:', decodedData);
-        
-        // Set the email from the order
-        setEmail(decodedData.customer.email);
-        
-        // Extract subscription data
-        const subscription = decodedData.subscription;
-        if (subscription) {
-          setSubscriptionData({
-            subscriptionId: subscription.id,
-            customerId: decodedData.customer.id,
-            variantId: subscription.variant_id,
-            subscriptionStatus: subscription.status,
-            currentPeriodEnd: subscription.renews_at,
-            planType: subscription.variant_id === window.__env__?.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID 
-              ? 'monthly' 
-              : 'yearly'
-          });
-          console.log('Subscription data extracted:', {
-            subscriptionId: subscription.id,
-            customerId: decodedData.customer.id,
-            variantId: subscription.variant_id,
-            subscriptionStatus: subscription.status,
-            currentPeriodEnd: subscription.renews_at,
-            planType: subscription.variant_id === window.__env__?.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID 
-              ? 'monthly' 
-              : 'yearly'
-          });
-        } else {
-          console.log('No subscription data found in order');
-        }
-        
-        setStep('create');
-      } catch (err: any) {
-        setError(err.message || 'Something went wrong');
-        console.error('Error verifying purchase:', err);
-      }
-    };
-
-    verifyPurchase();
-  }, [searchParams]);
+  const [step, setStep] = useState<'create' | 'verify' | 'complete'>('create');
 
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,11 +25,10 @@ const Success: React.FC = () => {
     }
 
     try {
-      // Prepare request data with subscription info if available
+      // Prepare request data
       const requestData = {
         email,
-        password,
-        ...(subscriptionData || {})
+        password
       };
       
       console.log('Sending account creation request with data:', requestData);
@@ -121,29 +65,13 @@ const Success: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mx-auto max-w-2xl text-center"
         >
-          {step === 'loading' && (
-            <div className="flex flex-col items-center justify-center space-y-4">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full"
-              />
-              <p className="text-lg text-gray-300">Verifying your purchase...</p>
-            </div>
-          )}
-
           {step === 'create' && (
             <div className="space-y-8">
               <div>
-                <h1 className="text-4xl font-bold tracking-tight">Welcome to Spilll!</h1>
+                <h1 className="text-4xl font-bold tracking-tight">Create Your Account</h1>
                 <p className="mt-4 text-lg text-gray-300">
-                  Your payment was successful. Let's set up your account to get started.
+                  Set up your account to get started with Spilll.
                 </p>
-                {subscriptionData && (
-                  <div className="mt-2 rounded-lg bg-blue-500/10 p-3 text-sm text-blue-300">
-                    <p>Your {subscriptionData.planType} subscription is active!</p>
-                  </div>
-                )}
               </div>
 
               <form onSubmit={handleCreateAccount} className="space-y-6">
@@ -155,8 +83,9 @@ const Success: React.FC = () => {
                     type="email"
                     id="email"
                     value={email}
-                    disabled
-                    className="mt-2 block w-full rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-3 text-white placeholder-gray-400"
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="mt-2 block w-full rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-3 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                    required
                   />
                 </div>
 

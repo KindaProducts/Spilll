@@ -33,8 +33,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "prisma generate && DISABLE_ESLINT_PLUGIN=true react-scripts build && node post-build.js",
-    "vercel-build": "prisma generate && DISABLE_ESLINT_PLUGIN=true CI=false react-scripts build && node post-build.js",
+    "build": "prisma generate && DISABLE_ESLINT_PLUGIN=true react-scripts build",
+    "vercel-build": "prisma generate && DISABLE_ESLINT_PLUGIN=true CI=false react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
