@@ -8,6 +8,10 @@
   ],
   "routes": [
     {
+      "src": "/",
+      "dest": "/build/index.html"
+    },
+    {
       "src": "/(.*)",
       "dest": "/build/$1"
     }
