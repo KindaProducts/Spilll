@@ -4,7 +4,6 @@
   "private": true,
   "dependencies": {
     "@headlessui/react": "^1.7.18",
-    "@lemonsqueezy/lemonsqueezy.js": "^1.2.5",
     "@prisma/client": "5.22.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.8",

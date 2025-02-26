@@ -15,18 +15,33 @@ const Success: React.FC = () => {
   useEffect(() => {
     const verifyPurchase = async () => {
       try {
-        // Get the order data from LemonSqueezy's redirect
-        const orderData = searchParams.get('order_data');
-        if (!orderData) {
-          throw new Error('No order data found');
-        }
-
-        // Parse the base64 encoded order data
-        const decodedData = JSON.parse(atob(orderData));
-        console.log('Order data:', decodedData);
+        // First, try to get the email from the URL parameters directly
+        // This is for our custom checkout URLs
+        let userEmail = searchParams.get('email');
         
-        // Set the email from the order
-        setEmail(decodedData.customer.email);
+        // If no email in URL, try to get the order data from LemonSqueezy's redirect
+        // This is for backward compatibility
+        if (!userEmail) {
+          const orderData = searchParams.get('order_data');
+          if (orderData) {
+            // Parse the base64 encoded order data
+            const decodedData = JSON.parse(atob(orderData));
+            console.log('Order data:', decodedData);
+            userEmail = decodedData.customer.email;
+          }
+        }
+        
+        if (!userEmail) {
+          // If still no email, check if we have a test parameter
+          userEmail = searchParams.get('test_email');
+        }
+        
+        if (!userEmail) {
+          throw new Error('No email information found');
+        }
+        
+        // Set the email
+        setEmail(userEmail);
         setStep('create');
       } catch (err: any) {
         setError(err.message || 'Something went wrong');
@@ -249,40 +264,28 @@ const Success: React.FC = () => {
                 </p>
               </div>
 
-              {error && (
-                <motion.div 
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`rounded-lg p-4 text-sm border ${
-                    error.includes('success') 
-                      ? 'bg-green-500/10 text-green-400 border-green-500/20' 
-                      : 'bg-red-500/10 text-red-400 border-red-500/20'
-                  }`}
-                >
-                  {error}
-                </motion.div>
-              )}
-
-              <div className="flex flex-col space-y-4">
-                <p className="text-sm text-gray-400">
-                  Didn't receive the email? Check your spam folder or
+              <div className="mt-8 space-y-4">
+                <p className="text-gray-400">
+                  Didn't receive the email? Check your spam folder or click below to resend.
                 </p>
                 <motion.button
                   onClick={handleResendVerification}
                   disabled={isResendingEmail}
-                  className="rounded-lg bg-gray-800 border border-gray-700 px-6 py-3 text-sm font-medium text-white hover:bg-gray-700"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  className={`w-full rounded-lg bg-gray-700 px-6 py-3 text-sm font-medium text-white hover:bg-gray-600 ${
+                    isResendingEmail ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                  whileHover={isResendingEmail ? {} : { scale: 1.02 }}
+                  whileTap={isResendingEmail ? {} : { scale: 0.98 }}
                 >
-                  {isResendingEmail ? 'Sending...' : 'Resend verification email'}
+                  {isResendingEmail ? 'Sending...' : 'Resend Verification Email'}
                 </motion.button>
                 <motion.button
                   onClick={handleGoToLogin}
-                  className="rounded-lg bg-transparent px-6 py-3 text-sm font-medium text-blue-400 hover:text-blue-300"
+                  className="w-full rounded-lg bg-transparent px-6 py-3 text-sm font-medium text-gray-300 hover:text-white"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  Already verified? Sign in
+                  Go to Login
                 </motion.button>
               </div>
             </div>

@@ -3,8 +3,6 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-// Import our LemonSqueezy disable service to ensure it runs before anything else
-import './services/lemonsqueezy-disable';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement

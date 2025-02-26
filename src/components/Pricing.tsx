@@ -27,8 +27,8 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
     setIsLoading(true);
 
     try {
-      // SIMPLIFIED APPROACH: Directly use the hardcoded URLs
-      // These are the exact URLs we want to use, no library or service needed
+      // Direct URLs for checkout - no dependencies on any libraries or services
+      // These are the exact URLs provided by the user
       const monthlyCheckoutUrl = 'https://spillling.com/buy/9588e2f5-6ffd-4408-9964-b46d84d4d9ac';
       const yearlyCheckoutUrl = 'https://spillling.com/buy/c10e8f45-cb50-4472-aaf1-9ec55074c62f';
       
@@ -37,7 +37,7 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
       
       console.log('Redirecting to checkout:', checkoutUrl);
       
-      // Direct navigation - no library, no service, just plain JavaScript
+      // Direct navigation using window.location.href
       window.location.href = checkoutUrl;
     } catch (err) {
       console.error('Checkout error:', err);
