@@ -27,37 +27,18 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
     setIsLoading(true);
 
     try {
-      // Debug: Log environment variables
-      console.log('Environment:', window.__env__);
-      
-      // Get variant IDs from environment variables
-      const monthlyVariantId = window.__env__?.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID;
-      const yearlyVariantId = window.__env__?.NEXT_PUBLIC_LEMONSQUEEZY_YEARLY_VARIANT_ID;
-      const storeId = window.__env__?.NEXT_PUBLIC_LEMONSQUEEZY_STORE_ID;
-
-      console.log('Config:', { 
-        monthlyVariantId, 
-        yearlyVariantId, 
-        storeId,
-        isYearly 
-      });
-
-      if (!monthlyVariantId || !yearlyVariantId) {
-        throw new Error('Variant IDs not found. Please check your configuration.');
-      }
-
-      // Construct the checkout URL - ALWAYS use the UUID format, not the direct LemonSqueezy URL
+      // IMPORTANT: We're bypassing all environment variables and directly using the correct URLs
+      // These are the only correct URLs that should be used
       const monthlyUUID = '9588e2f5-6ffd-4408-9964-b46d84d4d9ac';
       const yearlyUUID = 'c10e8f45-cb50-4472-aaf1-9ec55074c62f';
       
-      // Force the use of the UUID format
+      // Construct the URL directly without any reference to environment variables
       const checkoutUrl = `https://spillling.com/buy/${isYearly ? yearlyUUID : monthlyUUID}`;
       
-      // Log the URL we're redirecting to for debugging
       console.log('Redirecting to checkout:', checkoutUrl);
       
-      // Redirect to the checkout URL
-      window.location.href = checkoutUrl;
+      // Use window.open instead of window.location.href to avoid potential interference
+      window.open(checkoutUrl, '_self');
     } catch (err) {
       console.error('Checkout error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to start checkout process';
