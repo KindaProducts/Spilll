@@ -15,7 +15,8 @@ export const redirectToCheckout = (isYearly: boolean): void => {
     
     console.log('Environment variables:', {
       monthlyCheckoutUrl,
-      yearlyCheckoutUrl
+      yearlyCheckoutUrl,
+      allEnv: window.__env__
     });
     
     // Use the appropriate URL based on the selected plan
@@ -25,7 +26,36 @@ export const redirectToCheckout = (isYearly: boolean): void => {
     
     // Force a direct navigation to the URL by setting the location directly
     // This bypasses any potential interference from other libraries
-    window.location.replace(checkoutUrl);
+    
+    // First, try with replace to avoid browser history issues
+    try {
+      window.location.replace(checkoutUrl);
+    } catch (e) {
+      console.error('Error with window.location.replace:', e);
+      
+      // If replace fails, try with href
+      try {
+        window.location.href = checkoutUrl;
+      } catch (e2) {
+        console.error('Error with window.location.href:', e2);
+        
+        // If href fails, try with window.open
+        try {
+          window.open(checkoutUrl, '_self');
+        } catch (e3) {
+          console.error('Error with window.open:', e3);
+          
+          // Last resort - create and click a link
+          const link = document.createElement('a');
+          link.href = checkoutUrl;
+          link.target = '_self';
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      }
+    }
   } catch (err) {
     console.error('Checkout redirection error:', err);
     throw err;
