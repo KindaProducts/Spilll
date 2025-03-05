@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 
 interface PricingProps {
@@ -12,6 +12,7 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
   const [email, setEmail] = useState('');
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [lemonSqueezyLoaded, setLemonSqueezyLoaded] = useState(false);
 
   // Clear error after 5 seconds
   useEffect(() => {
@@ -23,30 +24,37 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
 
   // Initialize LemonSqueezy JS
   useEffect(() => {
-    // Load LemonSqueezy JS if it's not already loaded
-    if (typeof window !== 'undefined' && !document.getElementById('lemon-js-script')) {
+    // Only load once
+    if (typeof window !== 'undefined' && !lemonSqueezyLoaded) {
+      // Remove any existing script to avoid duplicates
+      const existingScript = document.getElementById('lemon-js-script');
+      if (existingScript) {
+        existingScript.remove();
+      }
+      
       const script = document.createElement('script');
       script.id = 'lemon-js-script';
       script.src = 'https://app.lemonsqueezy.com/js/lemon.js';
       script.async = true;
       script.defer = true;
-      document.body.appendChild(script);
-
+      
       script.onload = () => {
         if (typeof window.createLemonSqueezy === 'function') {
           window.createLemonSqueezy();
+          setLemonSqueezyLoaded(true);
+          console.log('LemonSqueezy initialized successfully');
         }
       };
-    } else if (typeof window !== 'undefined' && typeof window.createLemonSqueezy === 'function') {
-      window.createLemonSqueezy();
+      
+      document.body.appendChild(script);
     }
-  }, []);
+  }, [lemonSqueezyLoaded]);
 
   const monthlyPrice = 29;
   const yearlyPrice = Math.floor(monthlyPrice * 12 * 0.8); // 20% discount
   const monthlySavings = Math.floor(monthlyPrice * 12 - yearlyPrice);
 
-  const handleSubscribe = async () => {
+  const handleSubscribe = useCallback(async () => {
     setIsLoading(true);
     try {
       // Get environment variables
@@ -60,6 +68,8 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
       if (!variantId) {
         throw new Error('Variant ID not configured');
       }
+      
+      console.log('Creating checkout with variant ID:', variantId);
       
       // Create checkout via API
       const response = await fetch('/api/create-checkout', {
@@ -81,12 +91,27 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
         throw new Error(data.error || 'Failed to create checkout');
       }
       
+      console.log('Opening checkout URL:', data.checkoutUrl);
+      
       // Open checkout in overlay
       if (window.LemonSqueezy && window.LemonSqueezy.Url) {
         window.LemonSqueezy.Url.Open(data.checkoutUrl);
       } else {
-        // Fallback to redirect if LemonSqueezy JS is not loaded
-        window.location.href = data.checkoutUrl;
+        // If LemonSqueezy JS isn't loaded yet, try to initialize it again
+        if (typeof window.createLemonSqueezy === 'function') {
+          window.createLemonSqueezy();
+          setTimeout(() => {
+            if (window.LemonSqueezy && window.LemonSqueezy.Url) {
+              window.LemonSqueezy.Url.Open(data.checkoutUrl);
+            } else {
+              // Last resort fallback
+              window.location.href = data.checkoutUrl;
+            }
+          }, 500);
+        } else {
+          // Fallback to redirect if LemonSqueezy JS is not available
+          window.location.href = data.checkoutUrl;
+        }
       }
     } catch (err) {
       console.error('Checkout error:', err);
@@ -95,7 +120,7 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isYearly]);
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

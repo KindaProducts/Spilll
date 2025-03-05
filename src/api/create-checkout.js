@@ -12,6 +12,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, error: 'Variant ID is required' });
     }
 
+    console.log('Creating checkout for variant:', variantId);
+
     // Create checkout session with LemonSqueezy API
     const response = await axios.post(
       'https://api.lemonsqueezy.com/v1/checkouts',
@@ -23,14 +25,16 @@ export default async function handler(req, res) {
               variant_id: variantId,
               custom_price: null,
               product_options: {
-                redirect_url: `${process.env.NEXT_PUBLIC_APP_URL}/create`,
+                redirect_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.spillling.com'}/create`,
                 receipt_button_text: 'Create Your Account',
-                receipt_link_url: `${process.env.NEXT_PUBLIC_APP_URL}/create`,
+                receipt_link_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.spillling.com'}/create`,
                 receipt_thank_you_note: 'Thank you for your purchase! Please create your account to access your subscription.'
               },
               custom_data: customData || {},
               preview: process.env.NODE_ENV === 'development',
-              embed: true // Enable overlay checkout
+              embed: true, // Enable overlay checkout
+              disable_style_reset: false,
+              dark: false
             }
           }
         }
@@ -44,10 +48,13 @@ export default async function handler(req, res) {
       }
     );
 
+    const checkoutUrl = response.data.data.attributes.url;
+    console.log('Checkout URL created:', checkoutUrl);
+
     // Return the checkout URL
     return res.status(200).json({
       success: true,
-      checkoutUrl: response.data.data.attributes.url
+      checkoutUrl: checkoutUrl
     });
   } catch (error) {
     console.error('Error creating checkout:', error.response?.data || error.message);
