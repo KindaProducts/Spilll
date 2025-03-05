@@ -1,15 +1,13 @@
 interface Window {
-  createLemonSqueezy?: () => void;
+  // No need for createLemonSqueezy anymore since we're using direct links
+  // We still need the LemonSqueezy object for TypeScript compatibility
   LemonSqueezy?: {
     Url: {
       Open: (url: string) => void;
     };
   };
+  // We don't need environment variables for variant IDs anymore
   __env__?: {
-    NEXT_PUBLIC_LEMONSQUEEZY_YEARLY_VARIANT_ID: string;
-    NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID: string;
-    NEXT_PUBLIC_LEMONSQUEEZY_YEARLY_URL: string;
-    NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_URL: string;
     NEXT_PUBLIC_APP_URL: string;
     [key: string]: string;
   };

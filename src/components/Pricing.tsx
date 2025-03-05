@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 interface PricingProps {
@@ -9,11 +9,7 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
   const [isYearly, setIsYearly] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [email, setEmail] = useState('');
-  const [showEmailForm, setShowEmailForm] = useState(false);
-  const [formSubmitted, setFormSubmitted] = useState(false);
   const [lemonSqueezyLoaded, setLemonSqueezyLoaded] = useState(false);
-  const lemonSqueezyInitialized = useRef(false);
 
   // Clear error after 5 seconds
   useEffect(() => {
@@ -25,56 +21,22 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
 
   // Initialize LemonSqueezy JS
   useEffect(() => {
-    // Only initialize once
-    if (typeof window !== 'undefined' && !lemonSqueezyInitialized.current) {
-      lemonSqueezyInitialized.current = true;
-      
-      // Remove any existing script to avoid duplicates
-      const existingScript = document.getElementById('lemon-js-script');
-      if (existingScript) {
-        existingScript.remove();
-      }
-      
-      console.log('Loading LemonSqueezy script...');
-      
+    // Load LemonSqueezy JS if it's not already loaded
+    if (typeof window !== 'undefined' && !document.getElementById('lemon-js-script')) {
       const script = document.createElement('script');
       script.id = 'lemon-js-script';
-      script.src = 'https://app.lemonsqueezy.com/js/lemon.js';
+      script.src = 'https://assets.lemonsqueezy.com/lemon.js';
       script.async = true;
       script.defer = true;
       
       script.onload = () => {
-        console.log('LemonSqueezy script loaded, initializing...');
-        if (typeof window.createLemonSqueezy === 'function') {
-          try {
-            window.createLemonSqueezy();
-            setLemonSqueezyLoaded(true);
-            console.log('LemonSqueezy initialized successfully');
-          } catch (err) {
-            console.error('Error initializing LemonSqueezy:', err);
-            // Try again after a short delay
-            setTimeout(() => {
-              if (typeof window.createLemonSqueezy === 'function') {
-                try {
-                  window.createLemonSqueezy();
-                  setLemonSqueezyLoaded(true);
-                  console.log('LemonSqueezy initialized on retry');
-                } catch (retryErr) {
-                  console.error('Failed to initialize LemonSqueezy on retry:', retryErr);
-                }
-              }
-            }, 1000);
-          }
-        } else {
-          console.error('createLemonSqueezy function not found');
-        }
-      };
-      
-      script.onerror = () => {
-        console.error('Failed to load LemonSqueezy script');
+        console.log('LemonSqueezy script loaded successfully');
+        setLemonSqueezyLoaded(true);
       };
       
       document.body.appendChild(script);
+    } else if (document.getElementById('lemon-js-script')) {
+      setLemonSqueezyLoaded(true);
     }
   }, []);
 
@@ -82,137 +44,25 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
   const yearlyPrice = Math.floor(monthlyPrice * 12 * 0.8); // 20% discount
   const monthlySavings = Math.floor(monthlyPrice * 12 - yearlyPrice);
 
-  const handleSubscribe = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      // Get environment variables
-      const env = typeof window !== 'undefined' ? (window as any).__env__ || {} : {};
-      
-      // Get the appropriate variant ID
-      const variantId = isYearly
-        ? env.NEXT_PUBLIC_LEMONSQUEEZY_YEARLY_VARIANT_ID
-        : env.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID;
-      
-      if (!variantId) {
-        throw new Error('Variant ID not configured');
-      }
-      
-      console.log('Creating checkout with variant ID:', variantId);
-      
-      // Direct URL fallback in case API fails
-      const directUrl = isYearly
-        ? env.NEXT_PUBLIC_LEMONSQUEEZY_YEARLY_URL
-        : env.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_URL;
-      
-      // Create checkout via API
-      try {
-        const response = await fetch('/api/create-checkout', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ 
-            variantId,
-            customData: {
-              plan: isYearly ? 'yearly' : 'monthly',
-              timestamp: new Date().toISOString() // Add timestamp for tracking
-            }
-          }),
-        });
-        
-        if (!response.ok) {
-          console.error(`Server responded with status: ${response.status}`);
-          throw new Error(`Server responded with status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (!data.success || !data.checkoutUrl) {
-          console.error('Failed to create checkout:', data.error || 'No checkout URL returned');
-          throw new Error(data.error || 'Failed to create checkout');
-        }
-        
-        console.log('Opening checkout URL:', data.checkoutUrl);
-        
-        // Open checkout in overlay
-        if (window.LemonSqueezy && window.LemonSqueezy.Url) {
-          console.log('Using LemonSqueezy overlay');
-          window.LemonSqueezy.Url.Open(data.checkoutUrl);
-        } else {
-          // If LemonSqueezy JS isn't loaded yet, try to initialize it again
-          console.warn('LemonSqueezy not initialized, attempting to initialize...');
-          if (typeof window.createLemonSqueezy === 'function') {
-            try {
-              window.createLemonSqueezy();
-              setTimeout(() => {
-                if (window.LemonSqueezy && window.LemonSqueezy.Url) {
-                  console.log('Using LemonSqueezy overlay after initialization');
-                  window.LemonSqueezy.Url.Open(data.checkoutUrl);
-                } else {
-                  // Last resort fallback
-                  console.warn('Fallback to direct URL after initialization attempt');
-                  window.location.href = data.checkoutUrl;
-                }
-              }, 500);
-            } catch (err) {
-              console.error('Error reinitializing LemonSqueezy:', err);
-              // Fallback to redirect
-              console.warn('Fallback to direct URL after initialization error');
-              window.location.href = data.checkoutUrl;
-            }
-          } else {
-            // Fallback to redirect if LemonSqueezy JS is not available
-            console.warn('Fallback to direct URL - createLemonSqueezy not available');
-            window.location.href = data.checkoutUrl;
-          }
-        }
-      } catch (apiError) {
-        console.error('API error, falling back to direct URL:', apiError);
-        // If API fails, fall back to direct URL
-        if (directUrl) {
-          console.log('Using direct checkout URL:', directUrl);
-          window.location.href = directUrl;
-        } else {
-          throw new Error('No fallback URL available');
-        }
-      }
-    } catch (err) {
-      console.error('Checkout error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to initiate checkout';
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [isYearly]);
-
-  const handleEmailSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setIsLoading(true);
-
-    try {
-      // Validate email
-      if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-        throw new Error('Please enter a valid email address');
-      }
-
-      // Here you would typically send the email to your backend
-      // For now, we'll just simulate a successful submission
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log('Interest registered for:', { 
-        email,
-        plan: isYearly ? 'yearly' : 'monthly'
-      });
-      
-      setFormSubmitted(true);
-    } catch (err) {
-      console.error('Submission error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to register interest';
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleSubscribe = () => {
+    // Use the direct LemonSqueezy links
+    const monthlyLink = "https://spilll.lemonsqueezy.com/buy/8a0e0990-c94e-49d0-9ecd-483f7b45de51?embed=1&media=0";
+    const yearlyLink = "https://spilll.lemonsqueezy.com/buy/257635ee-f50c-4a3a-b487-effbccb1c8b3?embed=1&media=0";
+    
+    // Create a temporary link element to trigger the LemonSqueezy overlay
+    const tempLink = document.createElement('a');
+    tempLink.className = 'lemonsqueezy-button';
+    tempLink.href = isYearly ? yearlyLink : monthlyLink;
+    tempLink.style.display = 'none';
+    document.body.appendChild(tempLink);
+    
+    // Click the link to trigger the overlay
+    tempLink.click();
+    
+    // Remove the temporary link after a short delay
+    setTimeout(() => {
+      document.body.removeChild(tempLink);
+    }, 100);
   };
 
   const subscriptionFeatures = [
@@ -317,67 +167,17 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
               ))}
             </ul>
             
-            {!showEmailForm && !formSubmitted && (
-              <motion.button
-                onClick={handleSubscribe}
-                disabled={isLoading}
-                className={`mt-8 block w-full rounded-lg bg-blue-600 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 ${
-                  isLoading ? 'opacity-75 cursor-not-allowed' : ''
-                }`}
-                whileHover={isLoading ? {} : { scale: 1.02 }}
-                whileTap={isLoading ? {} : { scale: 0.98 }}
-              >
-                {isLoading ? 'Processing...' : `Get Started with ${isYearly ? 'Yearly' : 'Monthly'} Plan`}
-              </motion.button>
-            )}
-            
-            {showEmailForm && !formSubmitted && (
-              <motion.form 
-                onSubmit={handleEmailSubmit}
-                className="mt-6 space-y-4"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                transition={{ duration: 0.3 }}
-              >
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
-                    Email address
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
-                    className="w-full rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-3 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                <motion.button
-                  type="submit"
-                  disabled={isLoading}
-                  className={`block w-full rounded-lg bg-blue-600 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 ${
-                    isLoading ? 'opacity-75 cursor-not-allowed' : ''
-                  }`}
-                  whileHover={isLoading ? {} : { scale: 1.02 }}
-                  whileTap={isLoading ? {} : { scale: 0.98 }}
-                >
-                  {isLoading ? 'Processing...' : 'Register Interest'}
-                </motion.button>
-              </motion.form>
-            )}
-            
-            {formSubmitted && (
-              <motion.div
-                className="mt-6 rounded-lg bg-green-500/10 p-4 text-green-300"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                <p className="font-medium">Thank you for your interest!</p>
-                <p className="mt-1 text-sm">We'll contact you soon with more information about our Pro plan.</p>
-              </motion.div>
-            )}
+            <motion.button
+              onClick={handleSubscribe}
+              disabled={isLoading}
+              className={`mt-8 block w-full rounded-lg bg-blue-600 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 ${
+                isLoading ? 'opacity-75 cursor-not-allowed' : ''
+              }`}
+              whileHover={isLoading ? {} : { scale: 1.02 }}
+              whileTap={isLoading ? {} : { scale: 0.98 }}
+            >
+              {isLoading ? 'Processing...' : `Get Started with ${isYearly ? 'Yearly' : 'Monthly'} Plan`}
+            </motion.button>
           </motion.div>
 
           {/* Free tier card */}
