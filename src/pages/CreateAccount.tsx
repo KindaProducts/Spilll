@@ -22,6 +22,7 @@ const CreateAccount: React.FC = () => {
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
 
   // Extract order_id from URL parameters on component mount
   useEffect(() => {
@@ -31,13 +32,21 @@ const CreateAccount: React.FC = () => {
     
     if (orderIdParam) {
       setOrderId(orderIdParam);
+    } else {
+      // If no order_id is present, redirect to the landing page after a short delay
+      setRedirecting(true);
+      const timer = setTimeout(() => {
+        navigate('/');
+      }, 3000);
+      
+      return () => clearTimeout(timer);
     }
     
     if (emailParam) {
       setEmail(emailParam);
       validateEmail(emailParam);
     }
-  }, [location.search]);
+  }, [location.search, navigate]);
 
   const validateEmail = (email: string): boolean => {
     if (!email) {
@@ -157,6 +166,43 @@ const CreateAccount: React.FC = () => {
       setLoading(false);
     }
   };
+
+  if (redirecting) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-md w-full bg-gray-800 rounded-lg shadow-xl p-8 text-center"
+        >
+          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-6">
+            <svg
+              className="h-10 w-10 text-blue-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-4">
+            Redirecting to Homepage
+          </h2>
+          <p className="text-gray-300 mb-6">
+            To create an account, you need to complete a purchase first. 
+            Redirecting you to our homepage...
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
 
   if (success) {
     return (
