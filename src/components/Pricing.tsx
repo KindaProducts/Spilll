@@ -1,6 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
+// Define the window interface to include LemonSqueezy
+declare global {
+  interface Window {
+    createLemonSqueezy: () => void;
+    LemonSqueezy: {
+      Setup: (options: { eventHandler: (event: any) => void }) => void;
+      Url: {
+        Open: (url: string) => void;
+      };
+    };
+  }
+}
+
 interface PricingProps {
   onFreePresetsClick: () => void;
 }
@@ -9,6 +22,9 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
   const [isYearly, setIsYearly] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [formSubmitted, setFormSubmitted] = useState(false);
   const [lemonSqueezyLoaded, setLemonSqueezyLoaded] = useState(false);
 
   // Clear error after 5 seconds
@@ -19,23 +35,37 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
     }
   }, [error]);
 
-  // Initialize LemonSqueezy JS
+  // Initialize LemonSqueezy JS when component mounts
   useEffect(() => {
-    // Load LemonSqueezy JS if it's not already loaded
-    if (typeof window !== 'undefined' && !document.getElementById('lemon-js-script')) {
+    // Add LemonSqueezy script if it doesn't exist
+    if (!document.getElementById('lemon-js-script')) {
       const script = document.createElement('script');
       script.id = 'lemon-js-script';
       script.src = 'https://assets.lemonsqueezy.com/lemon.js';
-      script.async = true;
       script.defer = true;
-      
       script.onload = () => {
-        console.log('LemonSqueezy script loaded successfully');
-        setLemonSqueezyLoaded(true);
+        if (window.createLemonSqueezy) {
+          window.createLemonSqueezy();
+          window.LemonSqueezy.Setup({
+            eventHandler: (event) => {
+              if (event.event === 'Checkout.Success') {
+                // Handle successful checkout
+                console.log('Checkout successful:', event);
+                
+                // Extract order data
+                const orderId = event.data.attributes.order_id;
+                const customerEmail = event.data.attributes.customer_email;
+                
+                // Redirect to account creation page with order details
+                window.location.href = `/create?order_id=${orderId}&email=${encodeURIComponent(customerEmail)}`;
+              }
+            }
+          });
+          setLemonSqueezyLoaded(true);
+        }
       };
-      
       document.body.appendChild(script);
-    } else if (document.getElementById('lemon-js-script')) {
+    } else if (window.LemonSqueezy) {
       setLemonSqueezyLoaded(true);
     }
   }, []);
@@ -45,24 +75,58 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
   const monthlySavings = Math.floor(monthlyPrice * 12 - yearlyPrice);
 
   const handleSubscribe = () => {
-    // Use the direct LemonSqueezy links
-    const monthlyLink = "https://spilll.lemonsqueezy.com/buy/8a0e0990-c94e-49d0-9ecd-483f7b45de51?embed=1&media=0";
-    const yearlyLink = "https://spilll.lemonsqueezy.com/buy/257635ee-f50c-4a3a-b487-effbccb1c8b3?embed=1&media=0";
-    
-    // Create a temporary link element to trigger the LemonSqueezy overlay
-    const tempLink = document.createElement('a');
-    tempLink.className = 'lemonsqueezy-button';
-    tempLink.href = isYearly ? yearlyLink : monthlyLink;
-    tempLink.style.display = 'none';
-    document.body.appendChild(tempLink);
-    
-    // Click the link to trigger the overlay
-    tempLink.click();
-    
-    // Remove the temporary link after a short delay
-    setTimeout(() => {
-      document.body.removeChild(tempLink);
-    }, 100);
+    setIsLoading(true);
+    try {
+      if (!lemonSqueezyLoaded) {
+        setError("Payment system is loading. Please try again in a moment.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Use LemonSqueezy overlay instead of redirecting
+      if (isYearly) {
+        // Yearly subscription
+        window.LemonSqueezy.Url.Open("https://spilll.lemonsqueezy.com/buy/257635ee-f50c-4a3a-b487-effbccb1c8b3?embed=1&media=0");
+      } else {
+        // Monthly subscription
+        window.LemonSqueezy.Url.Open("https://spilll.lemonsqueezy.com/buy/8a0e0990-c94e-49d0-9ecd-483f7b45de51?embed=1&media=0");
+      }
+    } catch (err) {
+      console.error('Subscription error:', err);
+      setError('Failed to process subscription. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      // Validate email
+      if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+        throw new Error('Please enter a valid email address');
+      }
+
+      // Here you would typically send the email to your backend
+      // For now, we'll just simulate a successful submission
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      console.log('Interest registered for:', { 
+        email,
+        plan: isYearly ? 'yearly' : 'monthly'
+      });
+      
+      setFormSubmitted(true);
+    } catch (err) {
+      console.error('Submission error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to register interest';
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const subscriptionFeatures = [
@@ -167,17 +231,71 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
               ))}
             </ul>
             
-            <motion.button
-              onClick={handleSubscribe}
-              disabled={isLoading}
-              className={`mt-8 block w-full rounded-lg bg-blue-600 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 ${
-                isLoading ? 'opacity-75 cursor-not-allowed' : ''
-              }`}
-              whileHover={isLoading ? {} : { scale: 1.02 }}
-              whileTap={isLoading ? {} : { scale: 0.98 }}
-            >
-              {isLoading ? 'Processing...' : `Get Started with ${isYearly ? 'Yearly' : 'Monthly'} Plan`}
-            </motion.button>
+            {!showEmailForm && !formSubmitted && (
+              <motion.a
+                href={isYearly 
+                  ? "https://spilll.lemonsqueezy.com/buy/257635ee-f50c-4a3a-b487-effbccb1c8b3?embed=1&media=0" 
+                  : "https://spilll.lemonsqueezy.com/buy/8a0e0990-c94e-49d0-9ecd-483f7b45de51?embed=1&media=0"}
+                className={`lemonsqueezy-button mt-8 block w-full rounded-lg bg-blue-600 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 text-center ${
+                  isLoading ? 'opacity-75 cursor-not-allowed' : ''
+                }`}
+                onClick={(e) => {
+                  if (isLoading) {
+                    e.preventDefault();
+                  }
+                }}
+              >
+                {isLoading ? 'Processing...' : `Get Started with ${isYearly ? 'Yearly' : 'Monthly'} Plan`}
+              </motion.a>
+            )}
+            
+            {showEmailForm && !formSubmitted && (
+              <motion.form 
+                onSubmit={handleEmailSubmit}
+                className="mt-6 space-y-4"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                transition={{ duration: 0.3 }}
+              >
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
+                    Email address
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    className="w-full rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-3 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <motion.button
+                  type="submit"
+                  disabled={isLoading}
+                  className={`block w-full rounded-lg bg-blue-600 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 ${
+                    isLoading ? 'opacity-75 cursor-not-allowed' : ''
+                  }`}
+                  whileHover={isLoading ? {} : { scale: 1.02 }}
+                  whileTap={isLoading ? {} : { scale: 0.98 }}
+                >
+                  {isLoading ? 'Processing...' : 'Register Interest'}
+                </motion.button>
+              </motion.form>
+            )}
+            
+            {formSubmitted && (
+              <motion.div
+                className="mt-6 rounded-lg bg-green-500/10 p-4 text-green-300"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <p className="font-medium">Thank you for your interest!</p>
+                <p className="mt-1 text-sm">We'll contact you soon with more information about our Pro plan.</p>
+              </motion.div>
+            )}
           </motion.div>
 
           {/* Free tier card */}

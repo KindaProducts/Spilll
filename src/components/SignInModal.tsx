@@ -71,7 +71,7 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose }) => {
     try {
       console.log('Attempting to sign in with:', { email, password });
       
-      const response = await fetch('/api/test-login', {
+      const response = await fetch('/api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -88,7 +88,13 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose }) => {
         onClose();
         navigate('/app');
       } else {
-        setError(data.error || 'Invalid credentials');
+        if (data.needsVerification) {
+          // If email needs verification, redirect to resend verification page
+          onClose();
+          navigate('/resend-verification', { state: { email: data.email } });
+        } else {
+          setError(data.error || 'Invalid credentials');
+        }
       }
     } catch (err) {
       console.error('Sign in error:', err);

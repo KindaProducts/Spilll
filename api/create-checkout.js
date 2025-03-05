@@ -1,16 +1,6 @@
 import axios from 'axios';
 
 export default async function handler(req, res) {
-  // Set CORS headers for all requests
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  
-  // Handle OPTIONS request (preflight)
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
@@ -42,7 +32,7 @@ export default async function handler(req, res) {
         type: 'checkouts',
         attributes: {
           checkout_data: {
-            variant_id: parseInt(variantId, 10), // Ensure variant ID is a number
+            variant_id: variantId,
             custom_price: null,
             product_options: {
               redirect_url: `${appUrl}/create`,

@@ -15,7 +15,7 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/test-login', {
+      const response = await fetch('/api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -31,7 +31,12 @@ const Login: React.FC = () => {
         // Redirect to the app
         navigate('/app');
       } else {
-        setError(data.error || 'Invalid credentials');
+        if (data.needsVerification) {
+          // If email needs verification, redirect to resend verification page
+          navigate('/resend-verification', { state: { email: data.email } });
+        } else {
+          setError(data.error || 'Invalid credentials');
+        }
       }
     } catch (err) {
       setError('Failed to log in. Please try again.');
