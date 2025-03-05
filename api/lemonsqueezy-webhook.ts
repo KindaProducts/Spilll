@@ -1,4 +1,4 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import crypto from 'crypto';
 import { PrismaClient } from '@prisma/client';
 
@@ -10,27 +10,31 @@ const verifyWebhookSignature = (
   signature: string,
   secret: string
 ): boolean => {
-  const hmac = crypto.createHmac('sha256', secret);
-  const digest = hmac.update(payload).digest('hex');
-  return crypto.timingSafeEqual(
-    Buffer.from(digest),
-    Buffer.from(signature)
-  );
+  try {
+    const hmac = crypto.createHmac('sha256', secret);
+    const digest = hmac.update(payload).digest('hex');
+    return crypto.timingSafeEqual(
+      Buffer.from(digest),
+      Buffer.from(signature)
+    );
+  } catch (error) {
+    console.error('Error verifying signature:', error);
+    return false;
+  }
 };
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
+    console.log('Received webhook request');
     const signature = req.headers['x-signature'] as string;
     
     if (!signature) {
+      console.error('Missing signature header');
       return res.status(400).json({ error: 'Missing signature header' });
     }
 
@@ -45,6 +49,7 @@ export default async function handler(
     );
 
     if (!isValid) {
+      console.error('Invalid signature');
       return res.status(401).json({ error: 'Invalid signature' });
     }
 
@@ -67,6 +72,18 @@ export default async function handler(
         break;
       case 'subscription_cancelled':
         await handleSubscriptionCancelled(data);
+        break;
+      case 'subscription_expired':
+        await handleSubscriptionExpired(data);
+        break;
+      case 'subscription_payment_failed':
+        await handleSubscriptionPaymentFailed(data);
+        break;
+      case 'subscription_payment_success':
+        await handleSubscriptionPaymentSuccess(data);
+        break;
+      case 'subscription_plan_changed':
+        await handleSubscriptionPlanChanged(data);
         break;
       default:
         console.log(`Unhandled event type: ${eventName}`);
@@ -216,4 +233,119 @@ async function handleSubscriptionCancelled(data: any) {
       }
     });
   }
+}
+
+async function handleSubscriptionExpired(data: any) {
+  const { attributes } = data;
+  const { user_email } = attributes;
+  
+  console.log(`Subscription expired for ${user_email}`);
+  
+  // Find the user
+  const user = await prisma.user.findUnique({
+    where: { email: user_email }
+  });
+  
+  if (!user) {
+    console.error(`User not found for email: ${user_email}`);
+    return;
+  }
+  
+  // Update user with subscription details
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { 
+      isSubscribed: false,
+      subscriptionStatus: 'expired',
+      currentPeriodEnd: new Date() // Set to current date as it's already expired
+    }
+  });
+}
+
+async function handleSubscriptionPaymentFailed(data: any) {
+  const { attributes } = data;
+  const { user_email } = attributes;
+  
+  console.log(`Subscription payment failed for ${user_email}`);
+  
+  // Find the user
+  const user = await prisma.user.findUnique({
+    where: { email: user_email }
+  });
+  
+  if (!user) {
+    console.error(`User not found for email: ${user_email}`);
+    return;
+  }
+  
+  // Update user with payment failure status
+  // Note: We don't change isSubscribed yet as they might still be in grace period
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { 
+      paymentStatus: 'failed'
+    }
+  });
+}
+
+async function handleSubscriptionPaymentSuccess(data: any) {
+  const { attributes } = data;
+  const { 
+    user_email, 
+    renews_at
+  } = attributes;
+  
+  console.log(`Subscription payment successful for ${user_email}`);
+  
+  // Find the user
+  const user = await prisma.user.findUnique({
+    where: { email: user_email }
+  });
+  
+  if (!user) {
+    console.error(`User not found for email: ${user_email}`);
+    return;
+  }
+  
+  // Update user with successful payment status and new renewal date
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { 
+      isSubscribed: true,
+      subscriptionStatus: 'active',
+      paymentStatus: 'succeeded',
+      currentPeriodEnd: renews_at ? new Date(renews_at) : null
+    }
+  });
+}
+
+async function handleSubscriptionPlanChanged(data: any) {
+  const { attributes } = data;
+  const { 
+    user_email, 
+    variant_id,
+    renews_at
+  } = attributes;
+  
+  console.log(`Subscription plan changed for ${user_email}`);
+  
+  // Find the user
+  const user = await prisma.user.findUnique({
+    where: { email: user_email }
+  });
+  
+  if (!user) {
+    console.error(`User not found for email: ${user_email}`);
+    return;
+  }
+  
+  // Update user with new plan details
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { 
+      variantId: variant_id.toString(),
+      planType: variant_id === process.env.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID ? 'monthly' : 'yearly',
+      currentPeriodEnd: renews_at ? new Date(renews_at) : null
+    }
+  });
 } 

@@ -23,6 +23,7 @@ model User {
   variantId         String?
   isSubscribed      Boolean   @default(false)
   subscriptionStatus String?   @default("inactive")
+  paymentStatus     String?   @default("none")
   currentPeriodEnd  DateTime?
   planType          String?   // "monthly" or "yearly"
 } 

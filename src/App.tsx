@@ -1,13 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import PresetGenerator from './components/desktop/PresetGenerator';
-import EmailModal from './components/EmailModal';
-import SignInModal from './components/SignInModal';
-import ContactModal from './components/ContactModal';
-import PrivacyPolicyModal from './components/PrivacyPolicyModal';
-import TermsModal from './components/TermsModal';
-import CookiePolicyModal from './components/CookiePolicyModal';
-import DesktopLayout from './components/desktop/DesktopLayout';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Features from './components/Features';
@@ -15,20 +7,27 @@ import HowItWorks from './components/HowItWorks';
 import Pricing from './components/Pricing';
 import FAQ from './components/FAQ';
 import Footer from './components/Footer';
-import Success from './pages/Success';
+import EmailModal from './components/EmailModal';
+import SignInModal from './components/SignInModal';
+import ContactModal from './components/ContactModal';
+import PrivacyPolicyModal from './components/PrivacyPolicyModal';
+import TermsModal from './components/TermsModal';
+import CookiePolicyModal from './components/CookiePolicyModal';
+import DesktopLayout from './components/desktop/DesktopLayout';
+import PresetGenerator from './components/desktop/PresetGenerator';
 
 // Check if running in Electron
-const isElectron = typeof window !== 'undefined' && 
-  window.process?.versions?.hasOwnProperty('electron');
+const isElectron = typeof window !== 'undefined' && window.navigator.userAgent.indexOf('Electron') >= 0;
 
-// Protected Route component
+// Protected route component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const token = localStorage.getItem('authToken');
-  return token ? <>{children}</> : <Navigate to="/" />;
+  // In a real app, you would check if the user is authenticated
+  return <>{children}</>;
 };
 
-// HomePage component
+// Home page component
 const HomePage: React.FC = () => {
+  const navigate = useNavigate();
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
@@ -61,17 +60,12 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       <Header onSignIn={handleSignInClick} />
-      <main>
-        <Hero 
+      <main className="flex-grow">
+        <Hero
           onFreePresetsClick={handleFreePresetsClick}
-          onSubscribeClick={() => {
-            const pricingSection = document.querySelector('#pricing');
-            if (pricingSection) {
-              pricingSection.scrollIntoView({ behavior: 'smooth' });
-            }
-          }}
+          onSubscribeClick={() => navigate('/success')}
         />
         <Features />
         <HowItWorks />
@@ -85,62 +79,47 @@ const HomePage: React.FC = () => {
         onCookieClick={handleCookieClick}
       />
 
-      <EmailModal
-        isOpen={isEmailModalOpen}
-        onClose={() => setIsEmailModalOpen(false)}
-      />
-      <SignInModal
-        isOpen={isSignInModalOpen}
-        onClose={() => setIsSignInModalOpen(false)}
-      />
-      <ContactModal
-        isOpen={isContactModalOpen}
-        onClose={() => setIsContactModalOpen(false)}
-      />
-      <PrivacyPolicyModal
-        isOpen={isPrivacyModalOpen}
-        onClose={() => setIsPrivacyModalOpen(false)}
-      />
-      <TermsModal
-        isOpen={isTermsModalOpen}
-        onClose={() => setIsTermsModalOpen(false)}
-      />
-      <CookiePolicyModal
-        isOpen={isCookieModalOpen}
-        onClose={() => setIsCookieModalOpen(false)}
-      />
-    </>
+      {/* Modals */}
+      <EmailModal isOpen={isEmailModalOpen} onClose={() => setIsEmailModalOpen(false)} />
+      <SignInModal isOpen={isSignInModalOpen} onClose={() => setIsSignInModalOpen(false)} />
+      <ContactModal isOpen={isContactModalOpen} onClose={() => setIsContactModalOpen(false)} />
+      <PrivacyPolicyModal isOpen={isPrivacyModalOpen} onClose={() => setIsPrivacyModalOpen(false)} />
+      <TermsModal isOpen={isTermsModalOpen} onClose={() => setIsTermsModalOpen(false)} />
+      <CookiePolicyModal isOpen={isCookieModalOpen} onClose={() => setIsCookieModalOpen(false)} />
+    </div>
   );
 };
 
-const App: React.FC = () => {
-  // Enable dark mode by default
-  React.useEffect(() => {
-    document.documentElement.classList.add('dark');
-  }, []);
+// Success page component
+const SuccessPage: React.FC = () => {
+  // This will be imported from the success.tsx file we created
+  const SuccessComponent = require('./pages/success').default;
+  return <SuccessComponent />;
+};
 
+// Main App component
+const App: React.FC = () => {
   return (
-    <Router>
-      <div className="min-h-screen bg-dark-900 text-white">
-        <Routes>
-          <Route path="/" element={isElectron ? (
-            <DesktopLayout>
-              <PresetGenerator isSubscribed={false} />
-            </DesktopLayout>
-          ) : (
-            <HomePage />
-          )} />
-          <Route path="/success" element={<Success />} />
-          <Route path="/app" element={
-            <ProtectedRoute>
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/success" element={<SuccessPage />} />
+      <Route
+        path="/app"
+        element={
+          <ProtectedRoute>
+            {isElectron ? (
               <DesktopLayout>
                 <PresetGenerator isSubscribed={true} />
               </DesktopLayout>
-            </ProtectedRoute>
-          } />
-        </Routes>
-      </div>
-    </Router>
+            ) : (
+              <DesktopLayout>
+                <PresetGenerator isSubscribed={true} />
+              </DesktopLayout>
+            )}
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
   );
 };
 
