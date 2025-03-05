@@ -12,6 +12,7 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
   const [email, setEmail] = useState('');
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [lemonSqueezyLoaded, setLemonSqueezyLoaded] = useState(false);
   const lemonSqueezyInitialized = useRef(false);
 
   // Clear error after 5 seconds
@@ -24,40 +25,57 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
 
   // Initialize LemonSqueezy JS
   useEffect(() => {
-    const initLemonSqueezy = () => {
-      // Only initialize once
-      if (typeof window !== 'undefined' && !lemonSqueezyInitialized.current) {
-        console.log('Initializing LemonSqueezy...');
-        
+    // Only initialize once
+    if (typeof window !== 'undefined' && !lemonSqueezyInitialized.current) {
+      lemonSqueezyInitialized.current = true;
+      
+      // Remove any existing script to avoid duplicates
+      const existingScript = document.getElementById('lemon-js-script');
+      if (existingScript) {
+        existingScript.remove();
+      }
+      
+      console.log('Loading LemonSqueezy script...');
+      
+      const script = document.createElement('script');
+      script.id = 'lemon-js-script';
+      script.src = 'https://app.lemonsqueezy.com/js/lemon.js';
+      script.async = true;
+      script.defer = true;
+      
+      script.onload = () => {
+        console.log('LemonSqueezy script loaded, initializing...');
         if (typeof window.createLemonSqueezy === 'function') {
           try {
             window.createLemonSqueezy();
-            lemonSqueezyInitialized.current = true;
+            setLemonSqueezyLoaded(true);
             console.log('LemonSqueezy initialized successfully');
           } catch (err) {
             console.error('Error initializing LemonSqueezy:', err);
+            // Try again after a short delay
+            setTimeout(() => {
+              if (typeof window.createLemonSqueezy === 'function') {
+                try {
+                  window.createLemonSqueezy();
+                  setLemonSqueezyLoaded(true);
+                  console.log('LemonSqueezy initialized on retry');
+                } catch (retryErr) {
+                  console.error('Failed to initialize LemonSqueezy on retry:', retryErr);
+                }
+              }
+            }, 1000);
           }
         } else {
-          console.log('LemonSqueezy not available yet, will try again when needed');
+          console.error('createLemonSqueezy function not found');
         }
-      }
-    };
-
-    // Try to initialize immediately
-    initLemonSqueezy();
-
-    // Also set up a listener for when the script loads
-    const handleLemonSqueezyLoaded = () => {
-      console.log('LemonSqueezy script loaded event detected');
-      initLemonSqueezy();
-    };
-
-    window.addEventListener('lemonSqueezyLoaded', handleLemonSqueezyLoaded);
-
-    // Clean up
-    return () => {
-      window.removeEventListener('lemonSqueezyLoaded', handleLemonSqueezyLoaded);
-    };
+      };
+      
+      script.onerror = () => {
+        console.error('Failed to load LemonSqueezy script');
+      };
+      
+      document.body.appendChild(script);
+    }
   }, []);
 
   const monthlyPrice = 29;
@@ -65,72 +83,98 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
   const monthlySavings = Math.floor(monthlyPrice * 12 - yearlyPrice);
 
   const handleSubscribe = useCallback(async () => {
-    setError(null);
     setIsLoading(true);
-    
     try {
-      // Get environment variables with fallbacks
-      const env = window.__env__ || {};
-      const reactEnv = window.process?.env || {};
+      // Get environment variables
+      const env = typeof window !== 'undefined' ? (window as any).__env__ || {} : {};
       
-      // Try to get variant ID from multiple sources
+      // Get the appropriate variant ID
       const variantId = isYearly
-        ? env.NEXT_PUBLIC_LEMONSQUEEZY_YEARLY_VARIANT_ID 
-          || reactEnv.REACT_APP_LEMONSQUEEZY_YEARLY_VARIANT_ID
-          || '714214' // Fallback to hardcoded value as last resort
-        : env.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID 
-          || reactEnv.REACT_APP_LEMONSQUEEZY_MONTHLY_VARIANT_ID
-          || '714220'; // Fallback to hardcoded value as last resort
+        ? env.NEXT_PUBLIC_LEMONSQUEEZY_YEARLY_VARIANT_ID
+        : env.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID;
+      
+      if (!variantId) {
+        throw new Error('Variant ID not configured');
+      }
       
       console.log('Creating checkout with variant ID:', variantId);
       
+      // Direct URL fallback in case API fails
+      const directUrl = isYearly
+        ? env.NEXT_PUBLIC_LEMONSQUEEZY_YEARLY_URL
+        : env.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_URL;
+      
       // Create checkout via API
-      const response = await fetch('/api/create-checkout.js', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          variantId,
-          customData: {
-            plan: isYearly ? 'yearly' : 'monthly',
-            timestamp: new Date().toISOString() // Add timestamp for tracking
-          }
-        }),
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Server error response:', errorText);
-        throw new Error(`Server responded with status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (!data.success || !data.checkoutUrl) {
-        throw new Error(data.error || 'Failed to create checkout');
-      }
-      
-      console.log('Opening checkout URL:', data.checkoutUrl);
-      
-      // Try to initialize LemonSqueezy if not already initialized
-      if (!lemonSqueezyInitialized.current && typeof window.createLemonSqueezy === 'function') {
-        try {
-          window.createLemonSqueezy();
-          lemonSqueezyInitialized.current = true;
-          console.log('LemonSqueezy initialized on demand');
-        } catch (err) {
-          console.error('Error initializing LemonSqueezy on demand:', err);
+      try {
+        const response = await fetch('/api/create-checkout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            variantId,
+            customData: {
+              plan: isYearly ? 'yearly' : 'monthly',
+              timestamp: new Date().toISOString() // Add timestamp for tracking
+            }
+          }),
+        });
+        
+        if (!response.ok) {
+          console.error(`Server responded with status: ${response.status}`);
+          throw new Error(`Server responded with status: ${response.status}`);
         }
-      }
-      
-      // Open checkout in overlay if available, otherwise redirect
-      if (window.LemonSqueezy && window.LemonSqueezy.Url && window.LemonSqueezy.Url.Open) {
-        console.log('Using LemonSqueezy overlay');
-        window.LemonSqueezy.Url.Open(data.checkoutUrl);
-      } else {
-        console.log('LemonSqueezy overlay not available, falling back to redirect');
-        window.location.href = data.checkoutUrl;
+        
+        const data = await response.json();
+        
+        if (!data.success || !data.checkoutUrl) {
+          console.error('Failed to create checkout:', data.error || 'No checkout URL returned');
+          throw new Error(data.error || 'Failed to create checkout');
+        }
+        
+        console.log('Opening checkout URL:', data.checkoutUrl);
+        
+        // Open checkout in overlay
+        if (window.LemonSqueezy && window.LemonSqueezy.Url) {
+          console.log('Using LemonSqueezy overlay');
+          window.LemonSqueezy.Url.Open(data.checkoutUrl);
+        } else {
+          // If LemonSqueezy JS isn't loaded yet, try to initialize it again
+          console.warn('LemonSqueezy not initialized, attempting to initialize...');
+          if (typeof window.createLemonSqueezy === 'function') {
+            try {
+              window.createLemonSqueezy();
+              setTimeout(() => {
+                if (window.LemonSqueezy && window.LemonSqueezy.Url) {
+                  console.log('Using LemonSqueezy overlay after initialization');
+                  window.LemonSqueezy.Url.Open(data.checkoutUrl);
+                } else {
+                  // Last resort fallback
+                  console.warn('Fallback to direct URL after initialization attempt');
+                  window.location.href = data.checkoutUrl;
+                }
+              }, 500);
+            } catch (err) {
+              console.error('Error reinitializing LemonSqueezy:', err);
+              // Fallback to redirect
+              console.warn('Fallback to direct URL after initialization error');
+              window.location.href = data.checkoutUrl;
+            }
+          } else {
+            // Fallback to redirect if LemonSqueezy JS is not available
+            console.warn('Fallback to direct URL - createLemonSqueezy not available');
+            window.location.href = data.checkoutUrl;
+          }
+        }
+      } catch (apiError) {
+        console.error('API error, falling back to direct URL:', apiError);
+        // If API fails, fall back to direct URL
+        if (directUrl) {
+          console.log('Using direct checkout URL:', directUrl);
+          window.location.href = directUrl;
+        } else {
+          throw new Error('No fallback URL available');
+        }
       }
     } catch (err) {
       console.error('Checkout error:', err);

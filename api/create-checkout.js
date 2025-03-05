@@ -1,16 +1,16 @@
 import axios from 'axios';
 
 export default async function handler(req, res) {
-  // Set CORS headers
+  // Set CORS headers for all requests
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  // Handle preflight requests
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  // Handle OPTIONS request (preflight)
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
-
+  
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
@@ -32,39 +32,43 @@ export default async function handler(req, res) {
     }
 
     // Get the app URL with fallback
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.REACT_APP_APP_URL || 'https://www.spillling.com';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.spillling.com';
     
     console.log('Using app URL:', appUrl);
     
     // Create checkout session with LemonSqueezy API
-    const response = await axios.post(
-      'https://api.lemonsqueezy.com/v1/checkouts',
-      {
-        data: {
-          type: 'checkouts',
-          attributes: {
-            checkout_data: {
-              variant_id: variantId,
-              custom_price: null,
-              product_options: {
-                redirect_url: `${appUrl}/create`,
-                receipt_button_text: 'Create Your Account',
-                receipt_link_url: `${appUrl}/create`,
-                receipt_thank_you_note: 'Thank you for your purchase! Please create your account to access your subscription.'
-              },
-              custom_data: {
-                ...customData || {},
-                source: 'website',
-                created_at: new Date().toISOString()
-              },
-              preview: process.env.NODE_ENV === 'development',
-              embed: true, // Enable overlay checkout
-              disable_style_reset: false,
-              dark: true // Use dark mode for better integration with our site
-            }
+    const checkoutData = {
+      data: {
+        type: 'checkouts',
+        attributes: {
+          checkout_data: {
+            variant_id: parseInt(variantId, 10), // Ensure variant ID is a number
+            custom_price: null,
+            product_options: {
+              redirect_url: `${appUrl}/create`,
+              receipt_button_text: 'Create Your Account',
+              receipt_link_url: `${appUrl}/create`,
+              receipt_thank_you_note: 'Thank you for your purchase! Please create your account to access your subscription.'
+            },
+            custom_data: {
+              ...customData || {},
+              source: 'website',
+              created_at: new Date().toISOString()
+            },
+            preview: process.env.NODE_ENV === 'development',
+            embed: true, // Enable overlay checkout
+            disable_style_reset: false,
+            dark: true // Use dark mode for better integration with our site
           }
         }
-      },
+      }
+    };
+    
+    console.log('Checkout request data:', JSON.stringify(checkoutData, null, 2));
+    
+    const response = await axios.post(
+      'https://api.lemonsqueezy.com/v1/checkouts',
+      checkoutData,
       {
         headers: {
           'Accept': 'application/vnd.api+json',
