@@ -31,53 +31,18 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
       // Get environment variables
       const env = typeof window !== 'undefined' ? (window as any).__env__ || {} : {};
       
-      // Get the appropriate variant ID based on plan type
-      const variantId = isYearly 
-        ? env.NEXT_PUBLIC_LEMONSQUEEZY_YEARLY_VARIANT_ID 
-        : env.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID;
-      
-      if (!variantId) {
-        throw new Error('Variant ID not configured');
-      }
-      
       // Get the appropriate checkout URL directly from environment variables
       const checkoutUrl = isYearly
         ? env.NEXT_PUBLIC_LEMONSQUEEZY_YEARLY_URL
         : env.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_URL;
-        
+      
       if (!checkoutUrl) {
-        // Fall back to API if direct URL is not available
-        const response = await fetch('/api/create-lemonsqueezy-checkout', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            variantId,
-            isYearly,
-            userId: localStorage.getItem('userId') || null,
-          }),
-        });
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`API error: ${response.status} - ${errorText}`);
-        }
-        
-        const data = await response.json();
-        
-        if (!data.success || !data.checkoutUrl) {
-          throw new Error(data.error || 'Failed to create checkout');
-        }
-        
-        // Redirect to the checkout URL from API
-        console.log(`Redirecting to checkout from API: ${data.checkoutUrl}`);
-        window.location.href = data.checkoutUrl;
-      } else {
-        // Use direct URL from environment variables
-        console.log(`Redirecting to direct checkout URL: ${checkoutUrl}`);
-        window.location.href = checkoutUrl;
+        throw new Error('Checkout URL not configured');
       }
+      
+      // Use direct URL from environment variables
+      console.log(`Redirecting to direct checkout URL: ${checkoutUrl}`);
+      window.location.href = checkoutUrl;
     } catch (err) {
       console.error('Checkout error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to initiate checkout';

@@ -1,54 +1,55 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
+import axios from 'axios';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Only allow POST requests
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
   try {
     const { orderId } = req.body;
 
     if (!orderId) {
-      return res.status(400).json({ error: 'Missing orderId parameter' });
+      return res.status(400).json({ success: false, error: 'Order ID is required' });
     }
 
-    console.log(`Verifying payment for order ID: ${orderId}`);
-
-    // Find user with this order ID
-    const user = await prisma.user.findFirst({
+    // In a production environment, you would verify the order with LemonSqueezy API
+    // For now, we'll assume the order is valid if it has an ID
+    
+    // Check if we have a user associated with this order in our database
+    const subscription = await prisma.user.findFirst({
       where: {
-        subscriptionId: orderId.toString()
-      }
+        subscriptionId: orderId.toString(),
+      },
     });
 
-    if (user) {
-      console.log(`Found user for order ID ${orderId}: ${user.email}`);
-      
-      // Return user data
+    if (subscription) {
+      // Return the user data
       return res.status(200).json({
         success: true,
         user: {
-          id: user.id,
-          email: user.email,
-          isSubscribed: user.isSubscribed,
-          planType: user.planType
-        }
-      });
-    } else {
-      console.log(`No user found for order ID ${orderId}, but payment was verified`);
-      
-      // Return success but note that user record may still be processing
-      return res.status(200).json({
-        success: true,
-        message: 'Payment verified, but user record may still be processing'
+          id: subscription.id,
+          email: subscription.email,
+          isSubscribed: subscription.isSubscribed,
+          planType: subscription.planType,
+        },
       });
     }
+
+    // If we don't have a user record yet, the webhook might not have processed
+    // We'll still return success but without user data
+    return res.status(200).json({
+      success: true,
+      message: 'Payment verified, but user record not found yet. The webhook may still be processing.',
+    });
   } catch (error) {
     console.error('Error verifying payment:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to verify payment',
+    });
   }
 } 

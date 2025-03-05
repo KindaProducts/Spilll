@@ -4,21 +4,9 @@
     {
       "src": "build/**",
       "use": "@vercel/static"
-    },
-    {
-      "src": "api/*.ts",
-      "use": "@vercel/node"
     }
   ],
   "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "src": "/(success|app|dashboard|login)",
-      "dest": "/build/index.html"
-    },
     {
       "src": "/(.*)",
       "dest": "/build/$1"

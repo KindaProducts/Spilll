@@ -1,4 +1,4 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+import { NextApiRequest, NextApiResponse } from 'next';
 import crypto from 'crypto';
 import { PrismaClient } from '@prisma/client';
 
@@ -10,31 +10,27 @@ const verifyWebhookSignature = (
   signature: string,
   secret: string
 ): boolean => {
-  try {
-    const hmac = crypto.createHmac('sha256', secret);
-    const digest = hmac.update(payload).digest('hex');
-    return crypto.timingSafeEqual(
-      Buffer.from(digest),
-      Buffer.from(signature)
-    );
-  } catch (error) {
-    console.error('Error verifying signature:', error);
-    return false;
-  }
+  const hmac = crypto.createHmac('sha256', secret);
+  const digest = hmac.update(payload).digest('hex');
+  return crypto.timingSafeEqual(
+    Buffer.from(digest),
+    Buffer.from(signature)
+  );
 };
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    console.log('Received webhook request');
     const signature = req.headers['x-signature'] as string;
     
     if (!signature) {
-      console.error('Missing signature header');
       return res.status(400).json({ error: 'Missing signature header' });
     }
 
@@ -49,7 +45,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     );
 
     if (!isValid) {
-      console.error('Invalid signature');
       return res.status(401).json({ error: 'Invalid signature' });
     }
 
@@ -254,10 +249,9 @@ async function handleSubscriptionExpired(data: any) {
   // Update user with subscription details
   await prisma.user.update({
     where: { id: user.id },
-    data: { 
+    data: {
       isSubscribed: false,
-      subscriptionStatus: 'expired',
-      currentPeriodEnd: new Date() // Set to current date as it's already expired
+      subscriptionStatus: 'expired'
     }
   });
 }
@@ -279,23 +273,25 @@ async function handleSubscriptionPaymentFailed(data: any) {
   }
   
   // Update user with payment failure status
-  // Note: We don't change isSubscribed yet as they might still be in grace period
+  // Note: We don't change isSubscribed yet as they may still be in grace period
   await prisma.user.update({
     where: { id: user.id },
-    data: { 
+    data: {
       paymentStatus: 'failed'
     }
   });
+  
+  // Here you could also implement logic to send a payment failure notification
 }
 
 async function handleSubscriptionPaymentSuccess(data: any) {
   const { attributes } = data;
   const { 
-    user_email, 
+    user_email,
     renews_at
   } = attributes;
   
-  console.log(`Subscription payment successful for ${user_email}`);
+  console.log(`Subscription payment succeeded for ${user_email}`);
   
   // Find the user
   const user = await prisma.user.findUnique({
@@ -310,7 +306,7 @@ async function handleSubscriptionPaymentSuccess(data: any) {
   // Update user with successful payment status and new renewal date
   await prisma.user.update({
     where: { id: user.id },
-    data: { 
+    data: {
       isSubscribed: true,
       subscriptionStatus: 'active',
       paymentStatus: 'succeeded',
@@ -322,7 +318,7 @@ async function handleSubscriptionPaymentSuccess(data: any) {
 async function handleSubscriptionPlanChanged(data: any) {
   const { attributes } = data;
   const { 
-    user_email, 
+    user_email,
     variant_id,
     renews_at
   } = attributes;
@@ -342,7 +338,7 @@ async function handleSubscriptionPlanChanged(data: any) {
   // Update user with new plan details
   await prisma.user.update({
     where: { id: user.id },
-    data: { 
+    data: {
       variantId: variant_id.toString(),
       planType: variant_id === process.env.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID ? 'monthly' : 'yearly',
       currentPeriodEnd: renews_at ? new Date(renews_at) : null
