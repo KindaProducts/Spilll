@@ -28,19 +28,14 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
   const handleSubscribe = async () => {
     setIsLoading(true);
     try {
-      // Get environment variables
-      const env = typeof window !== 'undefined' ? (window as any).__env__ || {} : {};
+      // Hardcoded unique checkout URLs to ensure they're always correct
+      const yearlyCheckoutUrl = "https://spilll.lemonsqueezy.com/checkout/buy/257635ee-f50c-4a3a-b487-effbccb1c8b3";
+      const monthlyCheckoutUrl = "https://spilll.lemonsqueezy.com/checkout/buy/8a0e0990-c94e-49d0-9ecd-483f7b45de51";
       
-      // Get the appropriate checkout URL directly from environment variables
-      const checkoutUrl = isYearly
-        ? env.NEXT_PUBLIC_LEMONSQUEEZY_YEARLY_URL
-        : env.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_URL;
+      // Use the appropriate URL based on the selected plan
+      const checkoutUrl = isYearly ? yearlyCheckoutUrl : monthlyCheckoutUrl;
       
-      if (!checkoutUrl) {
-        throw new Error('Checkout URL not configured');
-      }
-      
-      // Use direct URL from environment variables
+      // Log and redirect to the direct checkout URL
       console.log(`Redirecting to direct checkout URL: ${checkoutUrl}`);
       window.location.href = checkoutUrl;
     } catch (err) {
