@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     }
 
     // Get the app URL with fallback
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.spillling.com';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.REACT_APP_APP_URL || 'https://www.spillling.com';
     
     console.log('Using app URL:', appUrl);
     

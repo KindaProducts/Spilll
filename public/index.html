@@ -15,13 +15,23 @@
     <title>Spilll - AI-Powered Lightroom Presets</title>
     <script>
       window.__env__ = {
-        NEXT_PUBLIC_APP_URL: window.location.origin,
+        NEXT_PUBLIC_APP_URL: "%REACT_APP_APP_URL%" || window.location.origin,
         NEXT_PUBLIC_LEMONSQUEEZY_STORE_ID: "%REACT_APP_LEMONSQUEEZY_STORE_ID%",
         NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID: "%REACT_APP_LEMONSQUEEZY_MONTHLY_VARIANT_ID%",
         NEXT_PUBLIC_LEMONSQUEEZY_YEARLY_VARIANT_ID: "%REACT_APP_LEMONSQUEEZY_YEARLY_VARIANT_ID%",
         NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_URL: "%REACT_APP_LEMONSQUEEZY_MONTHLY_URL%",
         NEXT_PUBLIC_LEMONSQUEEZY_YEARLY_URL: "%REACT_APP_LEMONSQUEEZY_YEARLY_URL%"
       };
+      
+      // Create a custom event when LemonSqueezy script loads
+      document.addEventListener('DOMContentLoaded', function() {
+        const lemonScript = document.querySelector('script[src="https://app.lemonsqueezy.com/js/lemon.js"]');
+        if (lemonScript) {
+          lemonScript.onload = function() {
+            window.dispatchEvent(new Event('lemonSqueezyLoaded'));
+          };
+        }
+      });
     </script>
     <!-- Preload LemonSqueezy script -->
     <link rel="preload" href="https://app.lemonsqueezy.com/js/lemon.js" as="script">

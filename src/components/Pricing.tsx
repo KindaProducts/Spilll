@@ -69,17 +69,18 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
     setIsLoading(true);
     
     try {
-      // Get environment variables
+      // Get environment variables with fallbacks
       const env = window.__env__ || {};
+      const reactEnv = window.process?.env || {};
       
-      // Get the appropriate variant ID
+      // Try to get variant ID from multiple sources
       const variantId = isYearly
-        ? env.NEXT_PUBLIC_LEMONSQUEEZY_YEARLY_VARIANT_ID
-        : env.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID;
-      
-      if (!variantId) {
-        throw new Error('Variant ID not configured');
-      }
+        ? env.NEXT_PUBLIC_LEMONSQUEEZY_YEARLY_VARIANT_ID 
+          || reactEnv.REACT_APP_LEMONSQUEEZY_YEARLY_VARIANT_ID
+          || '714214' // Fallback to hardcoded value as last resort
+        : env.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID 
+          || reactEnv.REACT_APP_LEMONSQUEEZY_MONTHLY_VARIANT_ID
+          || '714220'; // Fallback to hardcoded value as last resort
       
       console.log('Creating checkout with variant ID:', variantId);
       
@@ -99,6 +100,8 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
       });
       
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Server error response:', errorText);
         throw new Error(`Server responded with status: ${response.status}`);
       }
       
@@ -121,8 +124,8 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
         }
       }
       
-      // Open checkout in overlay
-      if (window.LemonSqueezy && window.LemonSqueezy.Url) {
+      // Open checkout in overlay if available, otherwise redirect
+      if (window.LemonSqueezy && window.LemonSqueezy.Url && window.LemonSqueezy.Url.Open) {
         console.log('Using LemonSqueezy overlay');
         window.LemonSqueezy.Url.Open(data.checkoutUrl);
       } else {
