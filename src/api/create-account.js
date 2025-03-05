@@ -22,10 +22,6 @@ export default async function handler(req, res) {
     return res.status(400).json({ success: false, error: 'Email and password are required' });
   }
 
-  if (!orderId) {
-    return res.status(400).json({ success: false, error: 'Order ID is required to create an account' });
-  }
-
   try {
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -37,17 +33,20 @@ export default async function handler(req, res) {
     }
 
     // Validate the order ID if provided
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-    });
+    if (orderId) {
+      // Check if the order exists and is valid
+      const order = await prisma.order.findUnique({
+        where: { id: orderId },
+      });
 
-    if (!order) {
-      return res.status(400).json({ success: false, error: 'Invalid order ID' });
-    }
+      if (!order) {
+        return res.status(400).json({ success: false, error: 'Invalid order ID' });
+      }
 
-    // Check if the order is already associated with a user
-    if (order.userId) {
-      return res.status(400).json({ success: false, error: 'This order has already been used to create an account' });
+      // Check if the order is already associated with a user
+      if (order.userId) {
+        return res.status(400).json({ success: false, error: 'This order has already been used to create an account' });
+      }
     }
 
     // Hash the password
@@ -70,10 +69,12 @@ export default async function handler(req, res) {
     });
 
     // If order ID is provided, associate the order with the user
-    await prisma.order.update({
-      where: { id: orderId },
-      data: { userId: user.id },
-    });
+    if (orderId) {
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { userId: user.id },
+      });
+    }
 
     // Send verification email
     const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${verificationToken}`;
