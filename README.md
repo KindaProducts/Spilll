@@ -1,110 +1,120 @@
 # Spilll - AI-Powered Lightroom Preset Generator
 
-A modern web application that generates custom Lightroom presets using AI technology.
+Spilll is a modern web application that uses AI to generate custom Lightroom presets based on user preferences and uploaded images.
 
 ## Features
 
-- Landing page with free preset pack offer
-- Email collection and drip campaign
-- Subscription-based access to preset generator
-- Drag-and-drop image upload
 - AI-powered preset generation
-- Export to Lightroom-compatible format
+- User account management with email verification
+- Secure payment processing with LemonSqueezy
+- Responsive design for all devices
+- Desktop application for offline use
 
 ## Tech Stack
 
-- Frontend: React.js with TypeScript
-- Styling: Tailwind CSS
-- Authentication: Firebase
-- Payment Processing: Stripe
-- Email Marketing: SendGrid
-- Hosting: Vercel
-- Storage: AWS S3
+- **Frontend**: React.js, Tailwind CSS, Framer Motion
+- **Backend**: Node.js, Express, Prisma ORM
+- **Database**: PostgreSQL
+- **Authentication**: JWT, bcrypt
+- **Email**: Mailgun
+- **Payment**: LemonSqueezy
+- **Hosting**: Vercel (frontend), Render (backend)
 
-## Development Setup
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v14 or higher)
+- PostgreSQL database
+- Mailgun account
+- LemonSqueezy account
+
+### Installation
 
 1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/spilll.git
-cd spilll
-```
+   ```
+   git clone https://github.com/yourusername/spilll.git
+   cd spilll
+   ```
 
 2. Install dependencies:
-```bash
-npm install
-```
+   ```
+   npm install
+   ```
 
-3. Create a `.env` file in the root directory with the following variables:
-```env
-REACT_APP_API_URL=your_api_url
-REACT_APP_STRIPE_PUBLISHABLE_KEY=your_stripe_key
-REACT_APP_AWS_REGION=your_aws_region
-REACT_APP_S3_BUCKET=your_s3_bucket
-```
+3. Set up environment variables:
+   ```
+   cp .env.example .env
+   ```
+   Edit the `.env` file with your actual credentials.
 
-4. Start the development server:
-```bash
-npm start
-```
+4. Set up the database:
+   ```
+   npx prisma migrate dev
+   ```
+
+5. Start the development server:
+   ```
+   npm run dev
+   ```
+
+## User Flow
+
+1. User visits the landing page
+2. User subscribes to a plan via LemonSqueezy
+3. After successful payment, user is redirected to the account creation page
+4. User creates an account with email and password
+5. Verification email is sent to the user
+6. User verifies email by clicking the link
+7. User can now log in and access premium features
 
 ## Deployment
 
-### Vercel Setup
+### Frontend (Vercel)
 
-1. Install Vercel CLI:
-```bash
-npm i -g vercel
-```
+1. Connect your GitHub repository to Vercel
+2. Configure environment variables in Vercel dashboard
+3. Deploy with the following settings:
+   - Framework Preset: Next.js
+   - Build Command: `npm run build`
+   - Output Directory: `build`
 
-2. Login to Vercel:
-```bash
-vercel login
-```
+### Backend (Render)
 
-3. Link your project:
-```bash
-vercel link
-```
+1. Create a new Web Service in Render
+2. Connect your GitHub repository
+3. Configure environment variables
+4. Set the build command to `npm install && npm run build`
+5. Set the start command to `npm start`
 
-4. Add environment variables to Vercel:
-```bash
-vercel env add
-```
+## Environment Variables
 
-5. Deploy:
-```bash
-vercel --prod
-```
+See `.env.example` for all required environment variables.
 
-### GitHub Actions Setup
+## API Endpoints
 
-1. Go to your GitHub repository settings
-2. Add the following secrets:
-   - `VERCEL_TOKEN`: Your Vercel token
-   - `ORG_ID`: Your Vercel organization ID
-   - `PROJECT_ID`: Your Vercel project ID
+### Authentication
 
-The deployment will automatically trigger on push to the main branch.
+- `POST /api/create-account` - Create a new user account
+- `POST /api/verify-email` - Verify user email
+- `POST /api/resend-verification` - Resend verification email
 
-## Apple Design Guidelines
+### Presets
 
-The UI follows Apple's design principles:
-
-- Rounded corners (border-radius: 12px)
-- Clear visual hierarchy
-- Generous padding and spacing
-- Smooth transitions and animations
-- Clear feedback states
-- Native-feeling interactions
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+- `POST /api/generate-preset` - Generate a new preset
+- `GET /api/presets` - Get user's presets
+- `GET /api/presets/:id` - Get a specific preset
+- `DELETE /api/presets/:id` - Delete a preset
 
 ## License
 
-Distributed under the MIT License. See `LICENSE` for more information. 
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgements
+
+- [React](https://reactjs.org/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Framer Motion](https://www.framer.com/motion/)
+- [Prisma](https://www.prisma.io/)
+- [LemonSqueezy](https://www.lemonsqueezy.com/)
+- [Mailgun](https://www.mailgun.com/) 

@@ -15,7 +15,9 @@ import HowItWorks from './components/HowItWorks';
 import Pricing from './components/Pricing';
 import FAQ from './components/FAQ';
 import Footer from './components/Footer';
-import Success from './pages/Success';
+import CreateAccount from './pages/CreateAccount';
+import VerifyEmail from './pages/VerifyEmail';
+import ResendVerification from './pages/ResendVerification';
 
 // Check if running in Electron
 const isElectron = typeof window !== 'undefined' && 
@@ -130,7 +132,9 @@ const App: React.FC = () => {
           ) : (
             <HomePage />
           )} />
-          <Route path="/success" element={<Success />} />
+          <Route path="/create-account" element={<CreateAccount />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/resend-verification" element={<ResendVerification />} />
           <Route path="/app" element={
             <ProtectedRoute>
               <DesktopLayout>
@@ -138,6 +142,7 @@ const App: React.FC = () => {
               </DesktopLayout>
             </ProtectedRoute>
           } />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
     </Router>
