@@ -21,6 +21,27 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
     }
   }, [error]);
 
+  // Initialize LemonSqueezy JS
+  useEffect(() => {
+    // Load LemonSqueezy JS if it's not already loaded
+    if (typeof window !== 'undefined' && !document.getElementById('lemon-js-script')) {
+      const script = document.createElement('script');
+      script.id = 'lemon-js-script';
+      script.src = 'https://app.lemonsqueezy.com/js/lemon.js';
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+
+      script.onload = () => {
+        if (typeof window.createLemonSqueezy === 'function') {
+          window.createLemonSqueezy();
+        }
+      };
+    } else if (typeof window !== 'undefined' && typeof window.createLemonSqueezy === 'function') {
+      window.createLemonSqueezy();
+    }
+  }, []);
+
   const monthlyPrice = 29;
   const yearlyPrice = Math.floor(monthlyPrice * 12 * 0.8); // 20% discount
   const monthlySavings = Math.floor(monthlyPrice * 12 - yearlyPrice);
@@ -28,20 +49,50 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
   const handleSubscribe = async () => {
     setIsLoading(true);
     try {
-      // Correct unique checkout URLs as provided by the user
-      const yearlyCheckoutUrl = "https://spillling.com/buy/257635ee-f50c-4a3a-b487-effbccb1c8b3";
-      const monthlyCheckoutUrl = "https://spillling.com/buy/8a0e0990-c94e-49d0-9ecd-483f7b45de51";
+      // Get environment variables
+      const env = typeof window !== 'undefined' ? (window as any).__env__ || {} : {};
       
-      // Use the appropriate URL based on the selected plan
-      const checkoutUrl = isYearly ? yearlyCheckoutUrl : monthlyCheckoutUrl;
+      // Get the appropriate variant ID
+      const variantId = isYearly
+        ? env.NEXT_PUBLIC_LEMONSQUEEZY_YEARLY_VARIANT_ID
+        : env.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID;
       
-      // Log and redirect to the direct checkout URL
-      console.log(`Redirecting to direct checkout URL: ${checkoutUrl}`);
-      window.location.href = checkoutUrl;
+      if (!variantId) {
+        throw new Error('Variant ID not configured');
+      }
+      
+      // Create checkout via API
+      const response = await fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          variantId,
+          customData: {
+            plan: isYearly ? 'yearly' : 'monthly'
+          }
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (!data.success || !data.checkoutUrl) {
+        throw new Error(data.error || 'Failed to create checkout');
+      }
+      
+      // Open checkout in overlay
+      if (window.LemonSqueezy && window.LemonSqueezy.Url) {
+        window.LemonSqueezy.Url.Open(data.checkoutUrl);
+      } else {
+        // Fallback to redirect if LemonSqueezy JS is not loaded
+        window.location.href = data.checkoutUrl;
+      }
     } catch (err) {
       console.error('Checkout error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to initiate checkout';
       setError(errorMessage);
+    } finally {
       setIsLoading(false);
     }
   };

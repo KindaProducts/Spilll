@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 const Login: React.FC = () => {
@@ -8,19 +8,6 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
-
-  // Check for verified email parameter
-  React.useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const verified = params.get('verified');
-    
-    if (verified === 'true') {
-      // Show toast or notification that email was verified
-      // This is where you would show the email verified toast message
-      console.log('Email verified successfully');
-    }
-  }, [location.search]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,15 +89,6 @@ const Login: React.FC = () => {
                 placeholder="Enter your password"
                 required
               />
-              <div className="mt-2 text-right">
-                <button
-                  type="button"
-                  onClick={() => navigate('/forgot-password')}
-                  className="text-sm text-blue-400 hover:text-blue-300"
-                >
-                  Forgot password?
-                </button>
-              </div>
             </div>
 
             {error && (
@@ -128,19 +106,6 @@ const Login: React.FC = () => {
             >
               {loading ? 'Signing in...' : 'Sign in'}
             </motion.button>
-            
-            <div className="text-center mt-4">
-              <p className="text-gray-400">
-                Don't have an account?{' '}
-                <button
-                  type="button"
-                  onClick={() => navigate('/create')}
-                  className="text-blue-400 hover:text-blue-300"
-                >
-                  Create one
-                </button>
-              </p>
-            </div>
           </form>
         </motion.div>
       </div>
