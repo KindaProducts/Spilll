@@ -133,7 +133,6 @@ const App: React.FC = () => {
             <HomePage />
           )} />
           <Route path="/create" element={<CreateAccount />} />
-          <Route path="/create-account" element={<CreateAccount />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/resend-verification" element={<ResendVerification />} />
           <Route path="/app" element={
