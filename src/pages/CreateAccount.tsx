@@ -22,21 +22,34 @@ const CreateAccount: React.FC = () => {
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [checkoutCompleted, setCheckoutCompleted] = useState(false);
 
-  // Extract order_id from URL parameters on component mount
+  // Extract order_id and other params from URL parameters on component mount
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const orderIdParam = params.get('order_id');
     const emailParam = params.get('email');
+    const checkoutCompleted = params.get('checkout') === 'completed';
     
     if (orderIdParam) {
       setOrderId(orderIdParam);
+      console.log('Order ID detected:', orderIdParam);
     }
     
     if (emailParam) {
       setEmail(emailParam);
       validateEmail(emailParam);
+      console.log('Email detected:', emailParam);
     }
+    
+    if (checkoutCompleted) {
+      setCheckoutCompleted(true);
+      console.log('Checkout completed flag detected');
+    }
+    
+    // Log the full URL for debugging
+    console.log('Current URL:', window.location.href);
+    console.log('Search params:', location.search);
   }, [location.search]);
 
   const validateEmail = (email: string): boolean => {
@@ -128,6 +141,8 @@ const CreateAccount: React.FC = () => {
     setError('');
 
     try {
+      console.log('Submitting account creation with order ID:', orderId);
+      
       const response = await fetch('/api/create-account', {
         method: 'POST',
         headers: {
@@ -136,9 +151,14 @@ const CreateAccount: React.FC = () => {
         body: JSON.stringify({ 
           email, 
           password,
-          orderId // Include the order ID if available
+          orderId, // Include the order ID if available
+          checkoutCompleted // Include checkout status
         }),
       });
+
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
 
       const data = await response.json();
 
@@ -147,12 +167,16 @@ const CreateAccount: React.FC = () => {
         // Clear form
         setPassword('');
         setConfirmPassword('');
+        
+        // Clear URL parameters after successful account creation
+        window.history.replaceState({}, document.title, '/create');
       } else {
-        setError(data.error || 'Failed to create account');
+        throw new Error(data.error || 'Failed to create account');
       }
     } catch (err) {
       console.error('Account creation error:', err);
-      setError('An error occurred while creating your account. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 interface PricingProps {
@@ -13,6 +13,7 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [lemonSqueezyLoaded, setLemonSqueezyLoaded] = useState(false);
+  const lemonSqueezyInitialized = useRef(false);
 
   // Clear error after 5 seconds
   useEffect(() => {
@@ -24,8 +25,10 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
 
   // Initialize LemonSqueezy JS
   useEffect(() => {
-    // Only load once
-    if (typeof window !== 'undefined' && !lemonSqueezyLoaded) {
+    // Only initialize once
+    if (typeof window !== 'undefined' && !lemonSqueezyInitialized.current) {
+      lemonSqueezyInitialized.current = true;
+      
       // Remove any existing script to avoid duplicates
       const existingScript = document.getElementById('lemon-js-script');
       if (existingScript) {
@@ -40,15 +43,35 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
       
       script.onload = () => {
         if (typeof window.createLemonSqueezy === 'function') {
-          window.createLemonSqueezy();
-          setLemonSqueezyLoaded(true);
-          console.log('LemonSqueezy initialized successfully');
+          try {
+            window.createLemonSqueezy();
+            setLemonSqueezyLoaded(true);
+            console.log('LemonSqueezy initialized successfully');
+          } catch (err) {
+            console.error('Error initializing LemonSqueezy:', err);
+            // Try again after a short delay
+            setTimeout(() => {
+              if (typeof window.createLemonSqueezy === 'function') {
+                try {
+                  window.createLemonSqueezy();
+                  setLemonSqueezyLoaded(true);
+                  console.log('LemonSqueezy initialized on retry');
+                } catch (retryErr) {
+                  console.error('Failed to initialize LemonSqueezy on retry:', retryErr);
+                }
+              }
+            }, 1000);
+          }
         }
+      };
+      
+      script.onerror = () => {
+        console.error('Failed to load LemonSqueezy script');
       };
       
       document.body.appendChild(script);
     }
-  }, [lemonSqueezyLoaded]);
+  }, []);
 
   const monthlyPrice = 29;
   const yearlyPrice = Math.floor(monthlyPrice * 12 * 0.8); // 20% discount
@@ -80,10 +103,15 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
         body: JSON.stringify({ 
           variantId,
           customData: {
-            plan: isYearly ? 'yearly' : 'monthly'
+            plan: isYearly ? 'yearly' : 'monthly',
+            timestamp: new Date().toISOString() // Add timestamp for tracking
           }
         }),
       });
+      
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
       
       const data = await response.json();
       
@@ -99,15 +127,21 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
       } else {
         // If LemonSqueezy JS isn't loaded yet, try to initialize it again
         if (typeof window.createLemonSqueezy === 'function') {
-          window.createLemonSqueezy();
-          setTimeout(() => {
-            if (window.LemonSqueezy && window.LemonSqueezy.Url) {
-              window.LemonSqueezy.Url.Open(data.checkoutUrl);
-            } else {
-              // Last resort fallback
-              window.location.href = data.checkoutUrl;
-            }
-          }, 500);
+          try {
+            window.createLemonSqueezy();
+            setTimeout(() => {
+              if (window.LemonSqueezy && window.LemonSqueezy.Url) {
+                window.LemonSqueezy.Url.Open(data.checkoutUrl);
+              } else {
+                // Last resort fallback
+                window.location.href = data.checkoutUrl;
+              }
+            }, 500);
+          } catch (err) {
+            console.error('Error reinitializing LemonSqueezy:', err);
+            // Fallback to redirect
+            window.location.href = data.checkoutUrl;
+          }
         } else {
           // Fallback to redirect if LemonSqueezy JS is not available
           window.location.href = data.checkoutUrl;
