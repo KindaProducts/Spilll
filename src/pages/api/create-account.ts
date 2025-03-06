@@ -65,7 +65,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   } catch (error) {
     console.error('Error creating account:', error);
-    return res.status(500).json({ success: false, error: 'Server error' });
+    
+    // Enhanced error logging
+    if (error instanceof Error) {
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+    }
+    
+    // Return a user-friendly error message
+    return res.status(500).json({ 
+      success: false, 
+      error: 'An error occurred while creating your account. Please try again later.' 
+    });
   }
 }
 
