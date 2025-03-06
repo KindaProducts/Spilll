@@ -63,12 +63,6 @@ const Header: React.FC<HeaderProps> = ({ onSignIn }) => {
               onClick={(e) => handleNavClick(e, '#hero')}
               className="flex items-center gap-2 transition-all duration-300 hover:scale-105"
             >
-              <img
-                className="h-8 w-auto object-contain"
-                src="/images/logo-dark.png"
-                alt="Spilll"
-                style={{ filter: 'invert(1)' }}
-              />
               <span className="text-xl font-semibold text-white">Spilll</span>
             </a>
           </div>
@@ -134,12 +128,6 @@ const Header: React.FC<HeaderProps> = ({ onSignIn }) => {
               className="transition-all duration-300"
             >
               <span className="sr-only">Spilll</span>
-              <img
-                className="h-8 w-auto object-contain"
-                src="/images/logo-dark.png"
-                alt="Spilll"
-                style={{ filter: 'invert(1)' }}
-              />
               <span className="text-xl font-semibold text-white">Spilll</span>
             </a>
             <button
