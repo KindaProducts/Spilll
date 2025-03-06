@@ -2,75 +2,18 @@
   "version": 2,
   "github": {
     "enabled": true,
-    "silent": false,
-    "autoJobCancelation": true
+    "silent": false
   },
-  "builds": [
-    {
-      "src": "build/**",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "src/api/**/*.js",
-      "use": "@vercel/node"
-    }
-  ],
+  "buildCommand": "npm run vercel-build",
+  "outputDirectory": "build",
+  "framework": "create-react-app",
   "routes": [
-    {
-      "src": "/static/(.*)",
-      "dest": "/build/static/$1"
-    },
-    {
-      "src": "/favicon.ico",
-      "dest": "/build/favicon.ico"
-    },
-    {
-      "src": "/logo192.png",
-      "dest": "/build/logo192.png"
-    },
-    {
-      "src": "/logo512.png",
-      "dest": "/build/logo512.png"
-    },
-    {
-      "src": "/manifest.json",
-      "dest": "/build/manifest.json"
-    },
-    {
-      "src": "/robots.txt",
-      "dest": "/build/robots.txt"
-    },
-    {
-      "src": "/api/login",
-      "dest": "/src/api/login.js"
-    },
-    {
-      "src": "/api/create-account",
-      "dest": "/src/api/create-account.js"
-    },
-    {
-      "src": "/api/verify-email",
-      "dest": "/src/api/verify-email.js"
-    },
-    {
-      "src": "/api/resend-verification",
-      "dest": "/src/api/resend-verification.js"
-    },
-    {
-      "src": "/api/lemonsqueezy-webhook",
-      "dest": "/src/api/lemonsqueezy-webhook.js"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/build/index.html"
-    }
+    { "src": "/api/login", "dest": "/src/api/login.js" },
+    { "src": "/api/create-account", "dest": "/src/api/create-account.js" },
+    { "src": "/api/verify-email", "dest": "/src/api/verify-email.js" },
+    { "src": "/api/resend-verification", "dest": "/src/api/resend-verification.js" },
+    { "src": "/api/lemonsqueezy-webhook", "dest": "/src/api/lemonsqueezy-webhook.js" },
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 } 
