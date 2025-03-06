@@ -1,19 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
-// Define the window interface to include LemonSqueezy
-declare global {
-  interface Window {
-    createLemonSqueezy: () => void;
-    LemonSqueezy: {
-      Setup: (options: { eventHandler: (event: any) => void }) => void;
-      Url: {
-        Open: (url: string) => void;
-      };
-    };
-  }
-}
-
 interface PricingProps {
   onFreePresetsClick: () => void;
 }
@@ -25,7 +12,18 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
   const [email, setEmail] = useState('');
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
-  const [lemonSqueezyLoaded, setLemonSqueezyLoaded] = useState(false);
+
+  // Load LemonSqueezy script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://assets.lemonsqueezy.com/lemon.js';
+    script.defer = true;
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   // Clear error after 5 seconds
   useEffect(() => {
@@ -35,68 +33,14 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
     }
   }, [error]);
 
-  // Initialize LemonSqueezy JS when component mounts
-  useEffect(() => {
-    // Add LemonSqueezy script if it doesn't exist
-    if (!document.getElementById('lemon-js-script')) {
-      const script = document.createElement('script');
-      script.id = 'lemon-js-script';
-      script.src = 'https://assets.lemonsqueezy.com/lemon.js';
-      script.defer = true;
-      script.onload = () => {
-        if (window.createLemonSqueezy) {
-          window.createLemonSqueezy();
-          window.LemonSqueezy.Setup({
-            eventHandler: (event) => {
-              if (event.event === 'Checkout.Success') {
-                // Handle successful checkout
-                console.log('Checkout successful:', event);
-                
-                // Extract order data
-                const orderId = event.data.attributes.order_id;
-                const customerEmail = event.data.attributes.customer_email;
-                
-                // Redirect to account creation page with order details
-                window.location.href = `/create?order_id=${orderId}&email=${encodeURIComponent(customerEmail)}`;
-              }
-            }
-          });
-          setLemonSqueezyLoaded(true);
-        }
-      };
-      document.body.appendChild(script);
-    } else if (window.LemonSqueezy) {
-      setLemonSqueezyLoaded(true);
-    }
-  }, []);
-
   const monthlyPrice = 29;
   const yearlyPrice = Math.floor(monthlyPrice * 12 * 0.8); // 20% discount
   const monthlySavings = Math.floor(monthlyPrice * 12 - yearlyPrice);
 
   const handleSubscribe = () => {
-    setIsLoading(true);
-    try {
-      if (!lemonSqueezyLoaded) {
-        setError("Payment system is loading. Please try again in a moment.");
-        setIsLoading(false);
-        return;
-      }
-
-      // Use LemonSqueezy overlay instead of redirecting
-      if (isYearly) {
-        // Yearly subscription
-        window.LemonSqueezy.Url.Open("https://spilll.lemonsqueezy.com/buy/257635ee-f50c-4a3a-b487-effbccb1c8b3?embed=1&media=0");
-      } else {
-        // Monthly subscription
-        window.LemonSqueezy.Url.Open("https://spilll.lemonsqueezy.com/buy/8a0e0990-c94e-49d0-9ecd-483f7b45de51?embed=1&media=0");
-      }
-    } catch (err) {
-      console.error('Subscription error:', err);
-      setError('Failed to process subscription. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
+    // The LemonSqueezy overlay will be triggered by the link's href
+    // No need for additional JavaScript here
+    console.log(`Opening ${isYearly ? 'yearly' : 'monthly'} checkout overlay`);
   };
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
@@ -236,16 +180,12 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
                 href={isYearly 
                   ? "https://spilll.lemonsqueezy.com/buy/257635ee-f50c-4a3a-b487-effbccb1c8b3?embed=1&media=0" 
                   : "https://spilll.lemonsqueezy.com/buy/8a0e0990-c94e-49d0-9ecd-483f7b45de51?embed=1&media=0"}
-                className={`lemonsqueezy-button mt-8 block w-full rounded-lg bg-blue-600 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 text-center ${
-                  isLoading ? 'opacity-75 cursor-not-allowed' : ''
-                }`}
-                onClick={(e) => {
-                  if (isLoading) {
-                    e.preventDefault();
-                  }
-                }}
+                onClick={handleSubscribe}
+                className="lemonsqueezy-button mt-8 block w-full rounded-lg bg-blue-600 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 text-center"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                {isLoading ? 'Processing...' : `Get Started with ${isYearly ? 'Yearly' : 'Monthly'} Plan`}
+                {`Get Started with ${isYearly ? 'Yearly' : 'Monthly'} Plan`}
               </motion.a>
             )}
             

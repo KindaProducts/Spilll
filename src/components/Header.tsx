@@ -64,9 +64,10 @@ const Header: React.FC<HeaderProps> = ({ onSignIn }) => {
               className="flex items-center gap-2 transition-all duration-300 hover:scale-105"
             >
               <img
+                className="h-8 w-auto object-contain"
                 src="/images/logo-dark.png"
-                alt="Spilll Logo"
-                className="h-8 w-auto"
+                alt="Spilll"
+                style={{ filter: 'invert(1)' }}
               />
               <span className="text-xl font-semibold text-white">Spilll</span>
             </a>
@@ -134,9 +135,10 @@ const Header: React.FC<HeaderProps> = ({ onSignIn }) => {
             >
               <span className="sr-only">Spilll</span>
               <img
+                className="h-8 w-auto object-contain"
                 src="/images/logo-dark.png"
-                alt="Spilll Logo"
-                className="h-8 w-auto"
+                alt="Spilll"
+                style={{ filter: 'invert(1)' }}
               />
               <span className="text-xl font-semibold text-white">Spilll</span>
             </a>

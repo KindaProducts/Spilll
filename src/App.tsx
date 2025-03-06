@@ -18,7 +18,6 @@ import Footer from './components/Footer';
 import CreateAccount from './pages/CreateAccount';
 import VerifyEmail from './pages/VerifyEmail';
 import ResendVerification from './pages/ResendVerification';
-import Login from './pages/Login';
 
 // Check if running in Electron
 const isElectron = typeof window !== 'undefined' && 
@@ -134,9 +133,9 @@ const App: React.FC = () => {
             <HomePage />
           )} />
           <Route path="/create" element={<CreateAccount />} />
+          <Route path="/create-account" element={<Navigate to="/create" replace />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/resend-verification" element={<ResendVerification />} />
-          <Route path="/login" element={<Login />} />
           <Route path="/app" element={
             <ProtectedRoute>
               <DesktopLayout>
