@@ -183,9 +183,13 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
             {!showEmailForm && !formSubmitted && (
               <>
                 {isYearly ? (
-                  <a href="https://spilll.lemonsqueezy.com/buy/257635ee-f50c-4a3a-b487-effbccb1c8b3?embed=1&logo=0" className="lemonsqueezy-button">Buy Spilll Yearly Subscription</a>
+                  <a href="https://spilll.lemonsqueezy.com/buy/257635ee-f50c-4a3a-b487-effbccb1c8b3?embed=1&logo=0" className="lemonsqueezy-button mt-8 block w-full rounded-lg bg-blue-600 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 text-center">
+                    Get Started with Yearly Plan
+                  </a>
                 ) : (
-                  <a href="https://spilll.lemonsqueezy.com/buy/8a0e0990-c94e-49d0-9ecd-483f7b45de51?embed=1&logo=0" className="lemonsqueezy-button">Buy Spilll Monthly Subscription</a>
+                  <a href="https://spilll.lemonsqueezy.com/buy/8a0e0990-c94e-49d0-9ecd-483f7b45de51?embed=1&logo=0" className="lemonsqueezy-button mt-8 block w-full rounded-lg bg-blue-600 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 text-center">
+                    Get Started with Monthly Plan
+                  </a>
                 )}
                 <script src="https://assets.lemonsqueezy.com/lemon.js" defer></script>
               </>
