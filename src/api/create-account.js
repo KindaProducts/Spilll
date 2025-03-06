@@ -100,15 +100,32 @@ export default async function handler(req, res) {
       to: email,
       subject: 'Verify Your Spilll Account',
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #4F46E5;">Welcome to Spilll!</h2>
-          <p>Thank you for creating an account. Please verify your email address by clicking the button below:</p>
-          <a href="${verificationUrl}" style="display: inline-block; background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; margin: 16px 0;">Verify Email Address</a>
-          <p>If the button doesn't work, you can also copy and paste the following link into your browser:</p>
-          <p><a href="${verificationUrl}">${verificationUrl}</a></p>
-          <p>This link will expire in 24 hours.</p>
-          <p>If you did not create an account, please ignore this email.</p>
-          <p>Best regards,<br>The Spilll Team</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #1a1a1a; color: #ffffff; border-radius: 10px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <img src="https://spillling.com/images/logo-dark.png" alt="Spilll Logo" style="width: 120px; filter: invert(1);">
+          </div>
+          <h2 style="color: #4F46E5; text-align: center; font-size: 24px; margin-bottom: 20px;">Verify Your Email Address</h2>
+          <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.5; color: #e0e0e0;">
+            Thank you for creating an account with Spilll! To complete your registration and access our AI-powered Lightroom presets, please verify your email address by clicking the button below:
+          </p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationUrl}" style="display: inline-block; background-color: #4F46E5; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; transition: background-color 0.3s;">Verify My Email</a>
+          </div>
+          <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.5; color: #e0e0e0;">
+            This verification link will expire in 24 hours. If you don't verify your email within this time, you'll need to request a new verification link.
+          </p>
+          <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.5; color: #e0e0e0;">
+            If the button above doesn't work, you can copy and paste the following URL into your browser:
+          </p>
+          <p style="background-color: #2a2a2a; padding: 12px; border-radius: 6px; word-break: break-all; font-size: 14px; margin-bottom: 30px; color: #e0e0e0;">
+            ${verificationUrl}
+          </p>
+          <p style="margin-bottom: 10px; font-size: 16px; line-height: 1.5; color: #e0e0e0;">
+            If you did not create an account with Spilll, please ignore this email.
+          </p>
+          <div style="border-top: 1px solid #333; margin-top: 30px; padding-top: 20px; text-align: center; font-size: 14px; color: #999;">
+            <p>&copy; ${new Date().getFullYear()} Spilll. All rights reserved.</p>
+          </div>
         </div>
       `,
     };
