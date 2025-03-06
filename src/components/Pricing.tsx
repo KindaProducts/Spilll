@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
+// Add type declaration for window.createLemonSqueezy
+declare global {
+  interface Window {
+    createLemonSqueezy?: () => void;
+  }
+}
+
 interface PricingProps {
   onFreePresetsClick: () => void;
 }
@@ -19,6 +26,12 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
     script.src = 'https://assets.lemonsqueezy.com/lemon.js';
     script.defer = true;
     document.body.appendChild(script);
+
+    script.onload = () => {
+      if (window.createLemonSqueezy) {
+        window.createLemonSqueezy();
+      }
+    };
 
     return () => {
       document.body.removeChild(script);
