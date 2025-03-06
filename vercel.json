@@ -4,6 +4,14 @@
     {
       "src": "build/**",
       "use": "@vercel/static"
+    },
+    {
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "src/api/**/*.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -30,6 +38,26 @@
     {
       "src": "/robots.txt",
       "dest": "/build/robots.txt"
+    },
+    {
+      "src": "/api/login",
+      "dest": "/src/api/login.js"
+    },
+    {
+      "src": "/api/create-account",
+      "dest": "/src/api/create-account.js"
+    },
+    {
+      "src": "/api/verify-email",
+      "dest": "/src/api/verify-email.js"
+    },
+    {
+      "src": "/api/resend-verification",
+      "dest": "/src/api/resend-verification.js"
+    },
+    {
+      "src": "/api/lemonsqueezy-webhook",
+      "dest": "/src/api/lemonsqueezy-webhook.js"
     },
     {
       "src": "/api/(.*)",
