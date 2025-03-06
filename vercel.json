@@ -1,19 +1,10 @@
 {
   "version": 2,
-  "github": {
-    "enabled": true,
-    "silent": false
-  },
   "buildCommand": "npm run vercel-build",
   "outputDirectory": "build",
   "framework": "create-react-app",
-  "routes": [
-    { "src": "/api/login", "dest": "/src/api/login.js" },
-    { "src": "/api/create-account", "dest": "/src/api/create-account.js" },
-    { "src": "/api/verify-email", "dest": "/src/api/verify-email.js" },
-    { "src": "/api/resend-verification", "dest": "/src/api/resend-verification.js" },
-    { "src": "/api/lemonsqueezy-webhook", "dest": "/src/api/lemonsqueezy-webhook.js" },
-    { "src": "/api/(.*)", "dest": "/api/$1" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 } 
