@@ -23,29 +23,41 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log(`Creating account for email: ${email}, with orderId: ${orderId || 'none'}`);
+    
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
 
     if (existingUser) {
+      console.log(`User with email ${email} already exists`);
       return res.status(400).json({ success: false, error: 'An account with this email already exists' });
     }
 
     // Validate the order ID if provided
+    let order = null;
     if (orderId) {
       // Check if the order exists and is valid
-      const order = await prisma.order.findUnique({
+      order = await prisma.order.findUnique({
         where: { id: orderId },
       });
 
       if (!order) {
+        console.log(`Invalid order ID: ${orderId}`);
         return res.status(400).json({ success: false, error: 'Invalid order ID' });
       }
 
       // Check if the order is already associated with a user
       if (order.userId) {
+        console.log(`Order ${orderId} is already associated with a user`);
         return res.status(400).json({ success: false, error: 'This order has already been used to create an account' });
+      }
+      
+      // If the order has an email and it doesn't match the provided email, log a warning
+      if (order.email && order.email !== email) {
+        console.log(`Warning: Email mismatch. Order email: ${order.email}, Provided email: ${email}`);
+        // We'll still allow the account creation, but log the discrepancy
       }
     }
 
@@ -65,15 +77,19 @@ export default async function handler(req, res) {
         verificationToken,
         verificationTokenExpires,
         emailVerified: false,
+        // Set subscription status based on order if available
+        subscriptionStatus: order ? 'active' : 'none',
+        subscriptionPlan: order ? order.plan : null,
       },
     });
 
     // If order ID is provided, associate the order with the user
-    if (orderId) {
+    if (orderId && order) {
       await prisma.order.update({
         where: { id: orderId },
         data: { userId: user.id },
       });
+      console.log(`Associated order ${orderId} with user ${user.id}`);
     }
 
     // Send verification email
@@ -97,7 +113,13 @@ export default async function handler(req, res) {
       `,
     };
 
-    await mg.messages().send(emailData);
+    try {
+      await mg.messages().send(emailData);
+      console.log(`Verification email sent to ${email}`);
+    } catch (emailError) {
+      console.error('Error sending verification email:', emailError);
+      // We'll still return success but log the email sending error
+    }
 
     return res.status(200).json({ 
       success: true, 

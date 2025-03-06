@@ -24,7 +24,7 @@ const CreateAccount: React.FC = () => {
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [orderId, setOrderId] = useState<string | null>(null);
 
-  // Extract order_id from URL parameters on component mount
+  // Extract order_id and email from URL parameters on component mount
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const orderIdParam = params.get('order_id');
@@ -32,11 +32,16 @@ const CreateAccount: React.FC = () => {
     
     if (orderIdParam) {
       setOrderId(orderIdParam);
+      console.log('Order ID found:', orderIdParam);
     }
     
     if (emailParam) {
       setEmail(emailParam);
       validateEmail(emailParam);
+      console.log('Email found:', emailParam);
+    } else {
+      // If no email is provided but order ID exists, we should still allow email input
+      console.log('No email provided in URL parameters');
     }
   }, [location.search]);
 
@@ -149,11 +154,20 @@ const CreateAccount: React.FC = () => {
         setPassword('');
         setConfirmPassword('');
       } else {
-        setError(data.error || 'Failed to create account');
+        // Handle specific error cases
+        if (data.error === 'An account with this email already exists') {
+          setError('An account with this email already exists. Please try logging in instead.');
+        } else if (data.error === 'Invalid order ID') {
+          setError('The order information is invalid or has expired. Please contact support for assistance.');
+        } else if (data.error === 'This order has already been used to create an account') {
+          setError('This order has already been used to create an account. Please try logging in instead.');
+        } else {
+          setError(data.error || 'Failed to create account');
+        }
       }
     } catch (err) {
       console.error('Account creation error:', err);
-      setError('An error occurred while creating your account. Please try again.');
+      setError('An error occurred while creating your account. Please try again or contact support if the issue persists.');
     } finally {
       setLoading(false);
     }
@@ -236,7 +250,7 @@ const CreateAccount: React.FC = () => {
                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                   transition-all duration-200
                   ${emailError ? 'border-red-500' : 'border-gray-700'}`}
-                disabled={loading || !!orderId} // Only disable if loading or if orderId is provided
+                disabled={loading} // Only disable when loading, not when orderId is present
                 aria-invalid={!!emailError}
                 aria-describedby={emailError ? 'email-error' : undefined}
                 autoComplete="email"
