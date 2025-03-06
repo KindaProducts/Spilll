@@ -189,17 +189,20 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
             </ul>
             
             {!showEmailForm && !formSubmitted && (
-              <motion.a
-                href={isYearly 
-                  ? "https://spilll.lemonsqueezy.com/buy/257635ee-f50c-4a3a-b487-effbccb1c8b3?embed=1&logo=0" 
-                  : "https://spilll.lemonsqueezy.com/buy/8a0e0990-c94e-49d0-9ecd-483f7b45de51?embed=1&logo=0"}
-                onClick={handleSubscribe}
-                className="lemonsqueezy-button mt-8 block w-full rounded-lg bg-blue-600 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 text-center"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                {`Get Started with ${isYearly ? 'Yearly' : 'Monthly'} Plan`}
-              </motion.a>
+              <>
+                <motion.a
+                  href={isYearly 
+                    ? "https://spilll.lemonsqueezy.com/buy/257635ee-f50c-4a3a-b487-effbccb1c8b3?embed=1&logo=0" 
+                    : "https://spilll.lemonsqueezy.com/buy/8a0e0990-c94e-49d0-9ecd-483f7b45de51?embed=1&logo=0"}
+                  onClick={handleSubscribe}
+                  className="lemonsqueezy-button mt-8 block w-full rounded-lg bg-blue-600 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 text-center"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {`Get Started with ${isYearly ? 'Yearly' : 'Monthly'} Plan`}
+                </motion.a>
+                <div style={{ display: 'none' }} dangerouslySetInnerHTML={{ __html: '<script src="https://assets.lemonsqueezy.com/lemon.js" defer></script>' }} />
+              </>
             )}
             
             {showEmailForm && !formSubmitted && (
