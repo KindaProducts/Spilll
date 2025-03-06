@@ -1,13 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
-// Add type declaration for window.createLemonSqueezy
-declare global {
-  interface Window {
-    createLemonSqueezy?: () => void;
-  }
-}
-
+// Remove the global type declaration as we'll use the exact code from LemonSqueezy
 interface PricingProps {
   onFreePresetsClick: () => void;
 }
@@ -20,21 +14,19 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
 
-  // Load LemonSqueezy script
+  // Load LemonSqueezy script - using the exact script tag from LemonSqueezy dashboard
   useEffect(() => {
+    // Create and append the script element
     const script = document.createElement('script');
     script.src = 'https://assets.lemonsqueezy.com/lemon.js';
     script.defer = true;
     document.body.appendChild(script);
 
-    script.onload = () => {
-      if (window.createLemonSqueezy) {
-        window.createLemonSqueezy();
-      }
-    };
-
     return () => {
-      document.body.removeChild(script);
+      // Clean up the script when the component unmounts
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
     };
   }, []);
 
@@ -190,18 +182,12 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
             
             {!showEmailForm && !formSubmitted && (
               <>
-                <motion.a
-                  href={isYearly 
-                    ? "https://spilll.lemonsqueezy.com/buy/257635ee-f50c-4a3a-b487-effbccb1c8b3?embed=1&logo=0" 
-                    : "https://spilll.lemonsqueezy.com/buy/8a0e0990-c94e-49d0-9ecd-483f7b45de51?embed=1&logo=0"}
-                  onClick={handleSubscribe}
-                  className="lemonsqueezy-button mt-8 block w-full rounded-lg bg-blue-600 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 text-center"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {`Get Started with ${isYearly ? 'Yearly' : 'Monthly'} Plan`}
-                </motion.a>
-                <div style={{ display: 'none' }} dangerouslySetInnerHTML={{ __html: '<script src="https://assets.lemonsqueezy.com/lemon.js" defer></script>' }} />
+                {isYearly ? (
+                  <a href="https://spilll.lemonsqueezy.com/buy/257635ee-f50c-4a3a-b487-effbccb1c8b3?embed=1&logo=0" className="lemonsqueezy-button mt-8 block w-full rounded-lg bg-blue-600 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 text-center">Buy Spilll Yearly Subscription</a>
+                ) : (
+                  <a href="https://spilll.lemonsqueezy.com/buy/8a0e0990-c94e-49d0-9ecd-483f7b45de51?embed=1&logo=0" className="lemonsqueezy-button mt-8 block w-full rounded-lg bg-blue-600 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 text-center">Buy Spilll Monthly Subscription</a>
+                )}
+                <script src="https://assets.lemonsqueezy.com/lemon.js" defer></script>
               </>
             )}
             
