@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 // Password validation regex (min 8 chars, at least 1 letter and 1 number)
-const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/;
+// Updated to be more permissive with special characters
+const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
 
 const CreateAccount: React.FC = () => {
   const navigate = useNavigate();
@@ -58,7 +59,7 @@ const CreateAccount: React.FC = () => {
       return false;
     }
     if (!PASSWORD_REGEX.test(password)) {
-      setPasswordError('Password must be at least 8 characters and include at least one letter and one number');
+      setPasswordError('Password must be at least 8 characters and include at least one letter and one number. Special characters are not allowed.');
       return false;
     }
     setPasswordError('');
@@ -235,9 +236,10 @@ const CreateAccount: React.FC = () => {
                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                   transition-all duration-200
                   ${emailError ? 'border-red-500' : 'border-gray-700'}`}
-                disabled={loading}
+                disabled={loading || !!orderId} // Only disable if loading or if orderId is provided
                 aria-invalid={!!emailError}
                 aria-describedby={emailError ? 'email-error' : undefined}
+                autoComplete="email"
               />
               {emailError && (
                 <p id="email-error" className="text-sm text-red-400 pl-1 mt-1">
@@ -265,6 +267,7 @@ const CreateAccount: React.FC = () => {
                   disabled={loading}
                   aria-invalid={!!passwordError}
                   aria-describedby={passwordError ? 'password-error' : undefined}
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"
@@ -311,6 +314,7 @@ const CreateAccount: React.FC = () => {
                 disabled={loading}
                 aria-invalid={!!confirmPasswordError}
                 aria-describedby={confirmPasswordError ? 'confirm-password-error' : undefined}
+                autoComplete="new-password"
               />
               {confirmPasswordError && (
                 <p id="confirm-password-error" className="text-sm text-red-400 pl-1 mt-1">
@@ -318,6 +322,16 @@ const CreateAccount: React.FC = () => {
                 </p>
               )}
             </div>
+          </div>
+          
+          <div className="mt-4 text-sm text-gray-400">
+            <p>Password requirements:</p>
+            <ul className="list-disc pl-5 mt-1">
+              <li>At least 8 characters</li>
+              <li>At least one letter</li>
+              <li>At least one number</li>
+              <li>Only letters and numbers allowed (no special characters)</li>
+            </ul>
           </div>
           
           <AnimatePresence>
