@@ -5,9 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Email validation regex
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
-// Password validation regex (min 8 chars, at least 1 letter and 1 number)
-// Updated to be more permissive with special characters
-const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+// Password validation regex (min 8 chars, at least 1 letter and 1 number, allowing special characters)
+const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]{8,}$/;
 
 const CreateAccount: React.FC = () => {
   const navigate = useNavigate();
@@ -23,6 +22,7 @@ const CreateAccount: React.FC = () => {
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [isLinkingPurchase, setIsLinkingPurchase] = useState(false);
 
   // Extract order_id and email from URL parameters on component mount
   useEffect(() => {
@@ -32,6 +32,7 @@ const CreateAccount: React.FC = () => {
     
     if (orderIdParam) {
       setOrderId(orderIdParam);
+      setIsLinkingPurchase(true);
       console.log('Order ID found:', orderIdParam);
     }
     
@@ -64,7 +65,7 @@ const CreateAccount: React.FC = () => {
       return false;
     }
     if (!PASSWORD_REGEX.test(password)) {
-      setPasswordError('Password must be at least 8 characters and include at least one letter and one number. Special characters are not allowed.');
+      setPasswordError('Password must be at least 8 characters and include at least one letter and one number.');
       return false;
     }
     setPasswordError('');
@@ -205,6 +206,13 @@ const CreateAccount: React.FC = () => {
             We've sent a verification email to <span className="font-semibold">{email}</span>. 
             Please check your inbox and click the verification link to activate your account.
           </p>
+          {isLinkingPurchase && (
+            <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <p className="text-blue-300">
+                Your purchase has been successfully linked to your new account. Once you verify your email, you'll have full access to all premium features.
+              </p>
+            </div>
+          )}
           <p className="text-gray-400 mb-8">
             If you don't see the email, please check your spam folder.
           </p>
@@ -230,8 +238,18 @@ const CreateAccount: React.FC = () => {
           Create Your Account
         </h1>
         <p className="mt-4 text-lg leading-7 text-gray-300">
-          Thank you for your purchase! Complete your account setup to access all premium features.
+          {isLinkingPurchase 
+            ? "Thank you for your purchase! Complete your account setup to access all premium features."
+            : "Sign up to access Spilll's AI-powered presets and features."}
         </p>
+        
+        {isLinkingPurchase && (
+          <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+            <p className="text-blue-300 text-sm">
+              You're linking your purchase to a new account. The email you provide here will be used for account verification and future communications.
+            </p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="mt-8">
           <div className="space-y-4">
@@ -344,7 +362,7 @@ const CreateAccount: React.FC = () => {
               <li>At least 8 characters</li>
               <li>At least one letter</li>
               <li>At least one number</li>
-              <li>Only letters and numbers allowed (no special characters)</li>
+              <li>Special characters are allowed</li>
             </ul>
           </div>
           

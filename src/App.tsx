@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import PresetGenerator from './components/desktop/PresetGenerator';
 import EmailModal from './components/EmailModal';
 import SignInModal from './components/SignInModal';
+import SignUpModal from './components/SignUpModal';
 import ContactModal from './components/ContactModal';
 import PrivacyPolicyModal from './components/PrivacyPolicyModal';
 import TermsModal from './components/TermsModal';
@@ -17,6 +18,7 @@ import FAQ from './components/FAQ';
 import Footer from './components/Footer';
 import CreateAccount from './pages/CreateAccount';
 import VerifyEmail from './pages/VerifyEmail';
+import VerifyEmailSent from './pages/VerifyEmailSent';
 import ResendVerification from './pages/ResendVerification';
 
 // Check if running in Electron
@@ -33,6 +35,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 const HomePage: React.FC = () => {
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
+  const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
@@ -40,6 +43,10 @@ const HomePage: React.FC = () => {
 
   const handleFreePresetsClick = () => {
     setIsEmailModalOpen(true);
+  };
+
+  const handleSignUpClick = () => {
+    setIsSignUpModalOpen(true);
   };
 
   const handleSignInClick = () => {
@@ -64,7 +71,7 @@ const HomePage: React.FC = () => {
 
   return (
     <>
-      <Header onSignIn={handleSignInClick} />
+      <Header onSignIn={handleSignInClick} onSignUp={handleSignUpClick} />
       <main>
         <Hero 
           onFreePresetsClick={handleFreePresetsClick}
@@ -77,7 +84,7 @@ const HomePage: React.FC = () => {
         />
         <Features />
         <HowItWorks />
-        <Pricing onFreePresetsClick={handleFreePresetsClick} />
+        <Pricing onFreePresetsClick={handleFreePresetsClick} onSignUpClick={handleSignUpClick} />
         <FAQ />
       </main>
       <Footer
@@ -94,6 +101,18 @@ const HomePage: React.FC = () => {
       <SignInModal
         isOpen={isSignInModalOpen}
         onClose={() => setIsSignInModalOpen(false)}
+        onSignUpClick={() => {
+          setIsSignInModalOpen(false);
+          setIsSignUpModalOpen(true);
+        }}
+      />
+      <SignUpModal
+        isOpen={isSignUpModalOpen}
+        onClose={() => setIsSignUpModalOpen(false)}
+        onSignInClick={() => {
+          setIsSignUpModalOpen(false);
+          setIsSignInModalOpen(true);
+        }}
       />
       <ContactModal
         isOpen={isContactModalOpen}
@@ -135,6 +154,7 @@ const App: React.FC = () => {
           <Route path="/create" element={<CreateAccount />} />
           <Route path="/create-account" element={<Navigate to="/create" replace />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/verify-email-sent" element={<VerifyEmailSent />} />
           <Route path="/resend-verification" element={<ResendVerification />} />
           <Route path="/app" element={
             <ProtectedRoute>

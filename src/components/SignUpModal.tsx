@@ -6,19 +6,26 @@ import { useNavigate } from 'react-router-dom';
 // Email validation regex
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
-interface SignInModalProps {
+// Password validation regex (at least 8 characters, 1 letter, 1 number, special chars allowed)
+const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]{8,}$/;
+
+interface SignUpModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSignUpClick?: () => void;
+  onSignInClick?: () => void;
 }
 
-const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onSignUpClick }) => {
+const SignUpModal: React.FC<SignUpModalProps> = ({ isOpen, onClose, onSignInClick }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [validationError, setValidationError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const navigate = useNavigate();
 
   // Clear states when modal opens/closes
@@ -26,21 +33,50 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onSignUpClic
     if (!isOpen) {
       setEmail('');
       setPassword('');
+      setConfirmPassword('');
       setError('');
-      setValidationError('');
+      setEmailError('');
+      setPasswordError('');
+      setConfirmPasswordError('');
     }
   }, [isOpen]);
 
   const validateEmail = (email: string): boolean => {
     if (!email) {
-      setValidationError('Email is required');
+      setEmailError('Email is required');
       return false;
     }
     if (!EMAIL_REGEX.test(email)) {
-      setValidationError('Please enter a valid email address');
+      setEmailError('Please enter a valid email address');
       return false;
     }
-    setValidationError('');
+    setEmailError('');
+    return true;
+  };
+
+  const validatePassword = (password: string): boolean => {
+    if (!password) {
+      setPasswordError('Password is required');
+      return false;
+    }
+    if (!PASSWORD_REGEX.test(password)) {
+      setPasswordError('Password must be at least 8 characters with at least one letter and one number');
+      return false;
+    }
+    setPasswordError('');
+    return true;
+  };
+
+  const validateConfirmPassword = (confirmPassword: string): boolean => {
+    if (!confirmPassword) {
+      setConfirmPasswordError('Please confirm your password');
+      return false;
+    }
+    if (confirmPassword !== password) {
+      setConfirmPasswordError('Passwords do not match');
+      return false;
+    }
+    setConfirmPasswordError('');
     return true;
   };
 
@@ -50,19 +86,41 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onSignUpClic
     if (newEmail) {
       validateEmail(newEmail);
     } else {
-      setValidationError('');
+      setEmailError('');
+    }
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    if (newPassword) {
+      validatePassword(newPassword);
+      if (confirmPassword) {
+        validateConfirmPassword(confirmPassword);
+      }
+    } else {
+      setPasswordError('');
+    }
+  };
+
+  const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newConfirmPassword = e.target.value;
+    setConfirmPassword(newConfirmPassword);
+    if (newConfirmPassword) {
+      validateConfirmPassword(newConfirmPassword);
+    } else {
+      setConfirmPasswordError('');
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateEmail(email)) {
-      return;
-    }
+    const isEmailValid = validateEmail(email);
+    const isPasswordValid = validatePassword(password);
+    const isConfirmPasswordValid = validateConfirmPassword(confirmPassword);
 
-    if (!password) {
-      setValidationError('Password is required');
+    if (!isEmailValid || !isPasswordValid || !isConfirmPasswordValid) {
       return;
     }
 
@@ -70,9 +128,7 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onSignUpClic
     setError('');
 
     try {
-      console.log('Attempting to sign in with:', { email, password });
-      
-      const response = await fetch('/api/test-login', {
+      const response = await fetch('/api/create-account', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -80,20 +136,18 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onSignUpClic
         body: JSON.stringify({ email, password }),
       });
 
-      console.log('Response status:', response.status);
       const data = await response.json();
-      console.log('Response data:', data);
 
-      if (data.success) {
-        localStorage.setItem('authToken', data.token);
+      if (response.ok) {
         onClose();
-        navigate('/app');
+        // Navigate to the verification email sent page with the email as state
+        navigate('/verify-email-sent', { state: { email } });
       } else {
-        setError(data.error || 'Invalid credentials');
+        setError(data.error || 'Failed to create account');
       }
     } catch (err) {
-      console.error('Sign in error:', err);
-      setError('Failed to sign in. Please try again.');
+      console.error('Sign up error:', err);
+      setError('Failed to create account. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -153,10 +207,10 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onSignUpClic
               
               <div className="relative">
                 <Dialog.Title className="text-3xl font-semibold leading-8 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                  Sign In
+                  Sign Up
                 </Dialog.Title>
                 <Dialog.Description className="mt-4 text-lg leading-7 text-gray-300">
-                  Access your Spilll account to create AI-powered presets.
+                  Create your Spilll account to access AI-powered presets.
                 </Dialog.Description>
 
                 <form onSubmit={handleSubmit} className="mt-8">
@@ -171,14 +225,14 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onSignUpClic
                         className={`w-full px-5 py-3.5 bg-gray-800/50 border rounded-xl text-base text-white placeholder-gray-400
                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                           transition-all duration-200
-                          ${validationError || error ? 'border-red-500' : 'border-gray-700'}`}
+                          ${emailError ? 'border-red-500' : 'border-gray-700'}`}
                         disabled={loading}
-                        aria-invalid={!!validationError}
-                        aria-describedby={validationError ? 'email-error' : undefined}
+                        aria-invalid={!!emailError}
+                        aria-describedby={emailError ? 'email-error' : undefined}
                       />
-                      {validationError && (
+                      {emailError && (
                         <p id="email-error" className="text-sm text-red-400 pl-1 mt-1">
-                          {validationError}
+                          {emailError}
                         </p>
                       )}
                     </div>
@@ -187,14 +241,16 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onSignUpClic
                       <input
                         type={showPassword ? "text" : "password"}
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={handlePasswordChange}
+                        onBlur={() => password && validatePassword(password)}
                         placeholder="Password"
                         className={`w-full px-5 py-3.5 bg-gray-800/50 border rounded-xl text-base text-white placeholder-gray-400
                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                           transition-all duration-200
-                          ${error ? 'border-red-500' : 'border-gray-700'}`}
+                          ${passwordError ? 'border-red-500' : 'border-gray-700'}`}
                         disabled={loading}
-                        required
+                        aria-invalid={!!passwordError}
+                        aria-describedby={passwordError ? 'password-error' : undefined}
                       />
                       <button
                         type="button"
@@ -215,7 +271,63 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onSignUpClic
                           {showPassword ? 'Hide password' : 'Show password'}
                         </span>
                       </button>
+                      {passwordError && (
+                        <p id="password-error" className="text-sm text-red-400 pl-1 mt-1">
+                          {passwordError}
+                        </p>
+                      )}
                     </div>
+
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={handleConfirmPasswordChange}
+                        onBlur={() => confirmPassword && validateConfirmPassword(confirmPassword)}
+                        placeholder="Confirm Password"
+                        className={`w-full px-5 py-3.5 bg-gray-800/50 border rounded-xl text-base text-white placeholder-gray-400
+                          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                          transition-all duration-200
+                          ${confirmPasswordError ? 'border-red-500' : 'border-gray-700'}`}
+                        disabled={loading}
+                        aria-invalid={!!confirmPasswordError}
+                        aria-describedby={confirmPasswordError ? 'confirm-password-error' : undefined}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors duration-200"
+                      >
+                        {showConfirmPassword ? (
+                          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                          </svg>
+                        ) : (
+                          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                        )}
+                        <span className="sr-only">
+                          {showConfirmPassword ? 'Hide password' : 'Show password'}
+                        </span>
+                      </button>
+                      {confirmPasswordError && (
+                        <p id="confirm-password-error" className="text-sm text-red-400 pl-1 mt-1">
+                          {confirmPasswordError}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="mt-3 text-sm text-gray-400">
+                    <p>Password must contain:</p>
+                    <ul className="list-disc pl-5 mt-1 space-y-1">
+                      <li>At least 8 characters</li>
+                      <li>At least one letter</li>
+                      <li>At least one number</li>
+                      <li>Special characters are allowed</li>
+                    </ul>
                   </div>
                   
                   <AnimatePresence>
@@ -240,19 +352,19 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onSignUpClic
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    {loading ? 'Signing in...' : 'Sign in'}
+                    {loading ? 'Creating account...' : 'Create account'}
                   </motion.button>
                   
-                  {onSignUpClick && (
+                  {onSignInClick && (
                     <div className="mt-4 text-center">
                       <p className="text-gray-400">
-                        Don't have an account?{' '}
+                        Already have an account?{' '}
                         <button
                           type="button"
-                          onClick={onSignUpClick}
+                          onClick={onSignInClick}
                           className="text-blue-400 hover:text-blue-300 font-medium transition-colors duration-200"
                         >
-                          Sign up
+                          Sign in
                         </button>
                       </p>
                     </div>
@@ -267,4 +379,4 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onSignUpClic
   );
 };
 
-export default SignInModal; 
+export default SignUpModal; 

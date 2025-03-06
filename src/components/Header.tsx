@@ -4,9 +4,10 @@ import { motion } from 'framer-motion';
 
 interface HeaderProps {
   onSignIn: () => void;
+  onSignUp: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onSignIn }) => {
+const Header: React.FC<HeaderProps> = ({ onSignIn, onSignUp }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems = [
@@ -108,6 +109,12 @@ const Header: React.FC<HeaderProps> = ({ onSignIn }) => {
             >
               Sign in
             </button>
+            <button
+              onClick={onSignUp}
+              className="text-sm font-semibold text-white transition-all duration-300 relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-white after:transition-all after:duration-300 hover:after:w-full"
+            >
+              Sign up
+            </button>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -173,10 +180,22 @@ const Header: React.FC<HeaderProps> = ({ onSignIn }) => {
               <div className="py-6 space-y-3">
                 <div className="mt-3 space-y-1">
                   <button
-                    onClick={() => setIsMobileMenuOpen(false)}
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      onSignIn();
+                    }}
                     className="block w-full px-3 py-2 text-base font-medium text-gray-300 hover:text-white"
                   >
                     Sign in
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      onSignUp();
+                    }}
+                    className="block w-full px-3 py-2 text-base font-medium text-gray-300 hover:text-white"
+                  >
+                    Sign up
                   </button>
                   <button
                     onClick={() => {

@@ -4,15 +4,23 @@ import { motion } from 'framer-motion';
 // Remove the global type declaration as we'll use the exact code from LemonSqueezy
 interface PricingProps {
   onFreePresetsClick: () => void;
+  onSignUpClick?: () => void;
 }
 
-const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
+const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick, onSignUpClick }) => {
   const [isYearly, setIsYearly] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Check if user is authenticated
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    setIsAuthenticated(!!token);
+  }, []);
 
   // Load LemonSqueezy script - using the exact script tag from LemonSqueezy dashboard
   useEffect(() => {
@@ -42,10 +50,12 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
   const yearlyPrice = Math.floor(monthlyPrice * 12 * 0.8); // 20% discount
   const monthlySavings = Math.floor(monthlyPrice * 12 - yearlyPrice);
 
-  const handleSubscribe = () => {
-    // The LemonSqueezy overlay will be triggered by the link's href
-    // No need for additional JavaScript here
-    console.log(`Opening ${isYearly ? 'yearly' : 'monthly'} checkout overlay`);
+  const handleSubscribe = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // If user is not authenticated, prevent default and show sign up modal
+    if (!isAuthenticated && onSignUpClick) {
+      e.preventDefault();
+      onSignUpClick();
+    }
   };
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
@@ -183,11 +193,19 @@ const Pricing: React.FC<PricingProps> = ({ onFreePresetsClick }) => {
             {!showEmailForm && !formSubmitted && (
               <>
                 {isYearly ? (
-                  <a href="https://spilll.lemonsqueezy.com/buy/257635ee-f50c-4a3a-b487-effbccb1c8b3?embed=1&logo=0" className="lemonsqueezy-button mt-8 block w-full rounded-lg bg-blue-600 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 text-center">
+                  <a 
+                    href="https://spilll.lemonsqueezy.com/buy/257635ee-f50c-4a3a-b487-effbccb1c8b3?embed=1&media=0&discount_form=1" 
+                    className="lemonsqueezy-button mt-8 block w-full rounded-lg bg-blue-600 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 text-center"
+                    onClick={handleSubscribe}
+                  >
                     Get Started with Yearly Plan
                   </a>
                 ) : (
-                  <a href="https://spilll.lemonsqueezy.com/buy/8a0e0990-c94e-49d0-9ecd-483f7b45de51?embed=1&logo=0" className="lemonsqueezy-button mt-8 block w-full rounded-lg bg-blue-600 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 text-center">
+                  <a 
+                    href="https://spilll.lemonsqueezy.com/buy/8a0e0990-c94e-49d0-9ecd-483f7b45de51?embed=1&media=0&discount_form=1" 
+                    className="lemonsqueezy-button mt-8 block w-full rounded-lg bg-blue-600 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 text-center"
+                    onClick={handleSubscribe}
+                  >
                     Get Started with Monthly Plan
                   </a>
                 )}
